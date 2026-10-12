@@ -50,10 +50,18 @@ export function readUsage({ days = 30, now = Date.now() } = {}) {
   for (const { p, mtime } of files) {
     let text;
     try { text = fs.readFileSync(p, 'utf8'); } catch { continue; }
-    for (const m of text.matchAll(/"type":"tool_use","id":"[^"]*","name":"mcp__([a-zA-Z0-9_-]+?)__/g)) hit(tools, m[1], mtime);
-    for (const m of text.matchAll(/"name":"Skill","input":\{"skill":"([^"]+)"/g)) hit(skills, m[1], mtime);
-    for (const m of text.matchAll(/"subagent_type":"([^"]+)"/g)) hit(skills, m[1], mtime);
-    for (const m of text.matchAll(/<command-name>\/?([a-zA-Z0-9:_-]+)<\/command-name>/g)) hit(skills, m[1], mtime);
+    // Each hit is dated by its own line: a resumed session keeps old calls in
+    // a file whose modified time is recent.
+    for (const line of text.split('\n')) {
+      if (!/tool_use|command-name|subagent_type/.test(line)) continue;
+      // The line's own timestamp is its last one; tool inputs can hold others.
+      const ts = Date.parse([...line.matchAll(/"timestamp":"([^"]+)"/g)].at(-1)?.[1] || '') || mtime;
+      if (ts < since) continue;
+      for (const m of line.matchAll(/"type":"tool_use","id":"[^"]*","name":"mcp__([a-zA-Z0-9_-]+?)__/g)) hit(tools, m[1], ts);
+      for (const m of line.matchAll(/"name":"Skill","input":\{"skill":"([^"]+)"/g)) hit(skills, m[1], ts);
+      for (const m of line.matchAll(/"subagent_type":"([^"]+)"/g)) hit(skills, m[1], ts);
+      for (const m of line.matchAll(/<command-name>\/?([a-zA-Z0-9:_-]+)<\/command-name>/g)) hit(skills, m[1], ts);
+    }
   }
   // When the logs are younger than the window, "not used in 30 days" would
   // overstate it; `from` is where the evidence actually starts.

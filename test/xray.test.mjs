@@ -123,6 +123,7 @@ test('usage from session logs marks unused plugins for cleanup', async () => {
     '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t1","name":"mcp__plugin_baton_baton__run","input":{}}]}}',
     '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"docs:write"}}]}}',
     '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t3","name":"mcp__context7__resolve","input":{}}]}}',
+    '{"type":"assistant","timestamp":"2025-01-01T00:00:00Z","message":{"content":[{"type":"tool_use","id":"t4","name":"mcp__plugin_vercel_vercel__deploy","input":{}}]}}',
   ].join('\n'));
   const prev = process.env.CLAUDE_CONFIG_DIR;
   process.env.CLAUDE_CONFIG_DIR = dir;

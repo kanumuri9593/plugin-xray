@@ -2,6 +2,7 @@
 
 ## 0.2.2 (2026-10-12)
 
+- Each use is dated by its own log line, so a session resumed today no longer makes last month's calls look recent.
 - Usage and history length come only from Claude Code session transcripts. Other `.jsonl` files that plugins keep under `~/.claude/projects` no longer make the history look older than it is.
 
 ## 0.2.1 (2026-10-12)
