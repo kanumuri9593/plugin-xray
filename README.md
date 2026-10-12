@@ -62,6 +62,22 @@ What changed mailer@1.0.15 → mailer@1.0.16
   + now has the email address archive@giftshop-mail.example.club in its code
 ```
 
+## What popular MCP servers cost
+
+Measured with `xray scan npm:<package> --tools` on 2026-10-12 (each server started once, its tool list sized at ~4 characters per token):
+
+| Server | Tools | ≈ Tokens |
+|---|---:|---:|
+| firecrawl-mcp | 26 | 21,164 |
+| @notionhq/notion-mcp-server | 24 | 19,054 |
+| chrome-devtools-mcp | 30 | 6,597 |
+| @playwright/mcp | 25 | 5,072 |
+| @modelcontextprotocol/server-github | 26 | 3,964 |
+| @upstash/context7-mcp | 2 | 1,307 |
+| exa-mcp-server | 2 | 535 |
+
+All 14 measured servers together come to ≈82k tokens when a client loads every tool list up front. Clients that defer tool loading pay less until a tool is used. Full table: [docs/token-study.md](docs/token-study.md).
+
 ## Install
 
 ### Claude Code: check every install automatically
