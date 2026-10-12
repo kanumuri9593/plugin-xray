@@ -116,7 +116,10 @@ test('usage from session logs marks unused plugins for cleanup', async () => {
   const { cleanupList } = await import('../src/clean.mjs');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'xray-use-'));
   fs.mkdirSync(path.join(dir, 'projects/p'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'projects/p/s.jsonl'), [
+  fs.mkdirSync(path.join(dir, 'projects/p/other-plugin'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'projects/p/other-plugin/log.jsonl'), '{"type":"tool_use","id":"x","name":"mcp__plugin_vercel_vercel__deploy"}');
+  fs.utimesSync(path.join(dir, 'projects/p/other-plugin/log.jsonl'), new Date('2026-01-01'), new Date('2026-01-01'));
+  fs.writeFileSync(path.join(dir, 'projects/p/0b2c3d4e-1111-4222-8333-944455556666.jsonl'), [
     '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t1","name":"mcp__plugin_baton_baton__run","input":{}}]}}',
     '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"docs:write"}}]}}',
     '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t3","name":"mcp__context7__resolve","input":{}}]}}',
@@ -125,6 +128,7 @@ test('usage from session logs marks unused plugins for cleanup', async () => {
   process.env.CLAUDE_CONFIG_DIR = dir;
   try {
     const u = readUsage({ days: 30 });
+    assert.ok(Date.now() - u.from < 86400000, 'history starts at the session log, not the plugin file');
     const mk = (id, extra = {}) => ({ id, name: id.split('@')[0], kind: 'plugin', host: 'claude-code', enabled: true, contextTokens: 500, items: [], servers: [], level: 'ok', description: 'Does a thing. More text.', ...extra });
     const ds = attachUsage([
       mk('baton@baton'), mk('docs@x'), mk('vercel@official'), mk('tiny@x', { contextTokens: 20 }),

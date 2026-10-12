@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 (2026-10-12)
+
+- Usage and history length come only from Claude Code session transcripts. Other `.jsonl` files that plugins keep under `~/.claude/projects` no longer make the history look older than it is.
+
 ## 0.2.1 (2026-10-12)
 
 - `xray clean` saves a connector's settings before `claude mcp remove` and prints the command that restores it. `--all` covers plugins only; connectors are removed only when named.

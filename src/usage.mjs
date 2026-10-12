@@ -7,6 +7,7 @@ import { HOME, listDir } from './util.mjs';
 
 const DAY = 86400000;
 const MAX_FILE = 200 * 1024 * 1024;
+const SESSION = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jsonl$/i;
 
 function claudeDir() { return process.env.CLAUDE_CONFIG_DIR || path.join(HOME, '.claude'); }
 
@@ -26,7 +27,9 @@ function logFiles(since, stats = {}) {
       let st;
       try { st = fs.statSync(p); } catch { continue; }
       if (st.isDirectory()) stack.push(p);
-      else if (name.endsWith('.jsonl')) {
+      // Session transcripts only (<uuid>.jsonl, and subagents/*.jsonl). Plugins
+      // drop their own .jsonl files here too, which would skew the history.
+      else if (SESSION.test(name) || (name.endsWith('.jsonl') && path.basename(dir) === 'subagents')) {
         stats.oldest = Math.min(stats.oldest ?? Infinity, st.birthtimeMs || st.mtimeMs, st.mtimeMs);
         if (st.mtimeMs >= since && st.size <= MAX_FILE) out.push({ p, mtime: st.mtimeMs });
       }
