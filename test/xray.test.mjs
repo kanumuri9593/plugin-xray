@@ -84,6 +84,8 @@ test('one entry per installed plugin, no self-overlap, quiet first session', asy
   const v1 = mk(path.join(dir, 'plugins/cache/m/demo/1.0.0'), skill);
   const v2 = mk(path.join(dir, 'plugins/cache/m/demo/1.1.0'), skill);
   mk(path.join(dir, 'plugins/synced/org/demo'), skill);
+  mk(path.join(dir, 'plugins/synced/org/notes'), skill);
+  mk(path.join(dir, 'plugins/synced/org/notes~g2'), skill);
   fs.writeFileSync(path.join(dir, 'plugins/installed_plugins.json'), JSON.stringify({ version: 2, plugins: { 'demo@m': [
     { scope: 'project', installPath: v1, version: '1.0.0', lastUpdated: '2026-01-01T00:00:00Z' },
     { scope: 'user', installPath: v2, version: '1.1.0', lastUpdated: '2026-02-01T00:00:00Z' },
@@ -93,8 +95,9 @@ test('one entry per installed plugin, no self-overlap, quiet first session', asy
   process.env.CLAUDE_PLUGIN_DATA = path.join(dir, 'data');
   try {
     const plugins = claudePlugins();
-    assert.equal(plugins.length, 1);
-    assert.equal(plugins[0].version, '1.1.0');
+    assert.deepEqual(plugins.map((p) => p.name).sort(), ['demo', 'notes']);
+    assert.equal(plugins.find((p) => p.name === 'demo').version, '1.1.0');
+    assert.match(plugins.find((p) => p.name === 'notes').root, /notes~g2$/);
     const { digest } = await scan(v2, { compare: false });
     assert.equal(digest.items.length, 2);
     assert.equal(findOverlaps([{ ...digest, enabled: true }]).filter((o) => o.type === 'similar-skill').length, 0);

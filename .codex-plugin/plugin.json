@@ -1,6 +1,6 @@
 {
   "name": "plugin-xray",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Check plugins and MCP servers before you trust them: what they can do, what they cost in tokens, what they overlap with, and what each update changed.",
   "author": { "name": "Yeswanth Varma Kanumuri", "url": "https://github.com/kanumuri9593" },
   "homepage": "https://github.com/kanumuri9593/plugin-xray",

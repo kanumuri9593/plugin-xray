@@ -29,6 +29,6 @@ export function listTools(cfg, { timeout = 20_000, cwd } = {}) {
         }
       }
     });
-    child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'plugin-xray', version: '0.1.1' } } }) + '\n');
+    child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'plugin-xray', version: '0.1.2' } } }) + '\n');
   });
 }

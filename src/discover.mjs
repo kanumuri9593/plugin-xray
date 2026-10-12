@@ -49,8 +49,15 @@ export function claudePlugins() {
   const synced = path.join(base, 'synced');
   for (const bucket of listDir(synced)) {
     const manifest = readJson(path.join(synced, bucket, 'manifest.json'));
-    for (const name of listDir(path.join(synced, bucket))) {
-      const root = path.join(synced, bucket, name);
+    // A re-synced plugin lands in `name~gN` next to the older copy; only the
+    // newest generation is live.
+    const latest = new Map();
+    for (const dir of listDir(path.join(synced, bucket))) {
+      const [, name, gen = 0] = dir.match(/^(.*?)(?:~g(\d+))?$/);
+      if (!latest.has(name) || Number(gen) > latest.get(name).gen) latest.set(name, { dir, gen: Number(gen) });
+    }
+    for (const [name, { dir }] of latest) {
+      const root = path.join(synced, bucket, dir);
       if (!isPluginRoot(root) || names().has(name)) continue;
       const m = manifest?.plugins?.find((p) => p.name === name);
       add(`${name}@${m?.marketplaceName || 'synced'}`, root, { version: m?.version });

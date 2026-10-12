@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2 (2026-10-12)
+
+- Plugins synced from a claude.ai organisation are counted once: when a re-sync leaves `name` and `name~g2` side by side, only the newest generation is read.
+
 ## 0.1.1 (2026-10-12)
 
 Fixes from the first real install.
