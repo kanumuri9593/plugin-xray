@@ -1,0 +1,45 @@
+{
+  "name": "plugin-xray",
+  "version": "0.1.0",
+  "mcpName": "io.github.kanumuri9593/plugin-xray",
+  "description": "See what an AI agent plugin or MCP server can do before you trust it: permissions, token cost, overlaps and version changes.",
+  "type": "module",
+  "bin": {
+    "xray": "cli/xray.mjs",
+    "plugin-xray": "cli/xray.mjs"
+  },
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "files": [
+    "cli",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "release:check": "node scripts/release-check.mjs"
+  },
+  "keywords": [
+    "mcp",
+    "claude-code",
+    "plugin",
+    "security",
+    "audit",
+    "agent",
+    "codex",
+    "cursor",
+    "supply-chain"
+  ],
+  "author": "Yeswanth Varma Kanumuri",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kanumuri9593/plugin-xray.git"
+  },
+  "homepage": "https://github.com/kanumuri9593/plugin-xray#readme"
+}

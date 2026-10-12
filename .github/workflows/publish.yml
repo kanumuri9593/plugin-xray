@@ -1,0 +1,42 @@
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm test
+      - run: npm run release:check
+      - name: Version matches the release tag
+        if: github.event_name == 'release'
+        run: |
+          V="v$(node -p "require('./package.json').version")"
+          [ "$V" = "${{ github.event.release.tag_name }}" ] || { echo "::error::package $V != tag ${{ github.event.release.tag_name }}"; exit 1; }
+      - name: Publish with npm trusted publishing
+        run: |
+          V="$(node -p "require('./package.json').version")"
+          if npm view "plugin-xray@$V" version >/dev/null 2>&1; then echo "plugin-xray@$V is already on npm"; else npm publish --access public --provenance; fi
+      - name: List on the MCP Registry
+        env:
+          MCP_PUBLISHER: v1.8.1
+          MCP_PUBLISHER_SHA256: a06c9096dcb9727c13555b6be26c7effa707b01f06a4c561ba7a3635443cf2cc
+        run: |
+          curl -sSLo mcp-publisher.tar.gz "https://github.com/modelcontextprotocol/registry/releases/download/$MCP_PUBLISHER/mcp-publisher_linux_amd64.tar.gz"
+          echo "$MCP_PUBLISHER_SHA256  mcp-publisher.tar.gz" | sha256sum -c -
+          tar xzf mcp-publisher.tar.gz mcp-publisher
+          V="$(node -p "require('./package.json').version")"
+          for i in $(seq 1 30); do npm view "plugin-xray@$V" version --prefer-online >/dev/null 2>&1 && break; sleep 20; done
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish

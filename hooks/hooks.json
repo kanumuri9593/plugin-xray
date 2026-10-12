@@ -1,0 +1,13 @@
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/cli/hook.mjs\" session-start", "timeout": 30 } ] }
+    ],
+    "ConfigChange": [
+      { "matcher": "user_settings|project_settings|local_settings", "hooks": [ { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/cli/hook.mjs\" config-change", "timeout": 30 } ] }
+    ],
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [ { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/cli/hook.mjs\" pre-tool-use", "timeout": 90 } ] }
+    ]
+  }
+}

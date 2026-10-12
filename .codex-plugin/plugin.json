@@ -1,0 +1,27 @@
+{
+  "name": "plugin-xray",
+  "version": "0.1.0",
+  "description": "Check plugins and MCP servers before you trust them: what they can do, what they cost in tokens, what they overlap with, and what each update changed.",
+  "author": { "name": "Yeswanth Varma Kanumuri", "url": "https://github.com/kanumuri9593" },
+  "homepage": "https://github.com/kanumuri9593/plugin-xray",
+  "repository": "https://github.com/kanumuri9593/plugin-xray",
+  "license": "MIT",
+  "keywords": ["security", "audit", "mcp", "plugins", "tokens"],
+  "skills": "./skills/",
+  "mcpServers": "./.codex-plugin/mcp.json",
+  "interface": {
+    "displayName": "Plugin X-ray",
+    "shortDescription": "See what a plugin can do before you trust it",
+    "longDescription": "Plugin X-ray audits the plugins and MCP servers installed for your agents: what they can run and reach, how many tokens they add to every turn, which ones overlap, and what changed in each update.",
+    "developerName": "Yeswanth Varma Kanumuri",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive"],
+    "websiteURL": "https://github.com/kanumuri9593/plugin-xray",
+    "defaultPrompt": [
+      "Audit my plugins and MCP servers",
+      "Check this MCP server before I install it",
+      "What changed in the latest version of this plugin?"
+    ],
+    "brandColor": "#0E7C86"
+  }
+}

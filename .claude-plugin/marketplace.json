@@ -1,0 +1,13 @@
+{
+  "name": "plugin-xray",
+  "owner": { "name": "Yeswanth Varma Kanumuri", "url": "https://github.com/kanumuri9593" },
+  "metadata": { "description": "Plugin X-ray: see what an agent plugin can do before you trust it." },
+  "plugins": [
+    {
+      "name": "plugin-xray",
+      "source": "./",
+      "description": "Checks every plugin and MCP server before you trust it: permissions, token cost per turn, overlaps and version changes.",
+      "category": "security"
+    }
+  ]
+}

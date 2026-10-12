@@ -1,0 +1,11 @@
+{
+  "name": "plugin-xray",
+  "displayName": "Plugin X-ray",
+  "version": "0.1.0",
+  "description": "Checks every plugin and MCP server before you trust it: what it can do on your machine, what it costs in tokens each turn, what it overlaps with, and what changed in each update.",
+  "author": { "name": "Yeswanth Varma Kanumuri", "url": "https://github.com/kanumuri9593" },
+  "homepage": "https://github.com/kanumuri9593/plugin-xray",
+  "repository": "https://github.com/kanumuri9593/plugin-xray",
+  "license": "MIT",
+  "keywords": ["security", "audit", "mcp", "plugins", "tokens"]
+}
