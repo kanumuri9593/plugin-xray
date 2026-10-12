@@ -61,7 +61,7 @@ export const register: Register = on => {
     if (e.props.hasSurvey || !s || (await read($, isHidden))) return next(e)
     const busy = await read($, isBusy)
     const { Box, Button, Text } = $.ui.resolve(e)
-    const saves = s.rows.filter(r => r.remove).reduce((a, r) => a + r.tokens, 0)
+    const saves = s.rows.filter(r => r.remove && r.enabled).reduce((a, r) => a + r.tokens, 0)
     // The band has one instance: draw X-ray's line on top of whatever the
     // plugins beneath draw (Baton's runs, say) instead of replacing it.
     const below = await next(e)
@@ -78,11 +78,11 @@ export const register: Register = on => {
         {s.attention > 0 && <Text color="error">● {s.attention}</Text>}
         {s.overlaps > 0 && <Text color="suggestion">⇄ {s.overlaps}</Text>}
         {s.unused === 0 && s.attention === 0 && <Text color="success">✓ all clear</Text>}
-        <Button key="pane" onPress={() => $.ui.open({ id: PANE, title: 'Plugin X-ray' })}><Text>☰</Text></Button>
-        {s.unused > 0 && <Button key="clean" onPress={() => askClean($)}><Text color="warning">✂</Text></Button>}
-        <Button key="report" onPress={() => openReport($)}><Text color="claude">📄</Text></Button>
-        <Button key="rescan" onPress={() => refresh($)}><Text dimColor={busy}>⟳</Text></Button>
-        <Button key="hide" onPress={() => update($, isHidden, () => true)}><Text dimColor>✕</Text></Button>
+        <Button key="pane" plain onPress={() => $.ui.open({ id: PANE, title: 'Plugin X-ray' })}><Text>☰</Text></Button>
+        {s.unused > 0 && <Button key="clean" plain onPress={() => askClean($)}><Text color="warning">✂</Text></Button>}
+        <Button key="report" plain onPress={() => openReport($)}><Text color="claude">📄</Text></Button>
+        <Button key="rescan" plain onPress={() => refresh($)}><Text dimColor={busy}>⟳</Text></Button>
+        <Button key="hide" plain onPress={() => update($, isHidden, () => true)}><Text dimColor>✕</Text></Button>
       </Box>
     )
     return below ? <Box flexDirection="column">{line}{below}</Box> : line
@@ -124,9 +124,9 @@ export const register: Register = on => {
           ))}
         </Box>
         <Box flexDirection="row" gap={2}>
-          {s.unused > 0 && <Button key="clean" onPress={() => askClean($)}><Text color="warning">✂ Clean up</Text></Button>}
-          <Button key="report" onPress={() => openReport($)}><Text color="claude">📄 Report</Text></Button>
-          <Button key="rescan" onPress={() => refresh($)}><Text>⟳ Rescan</Text></Button>
+          {s.unused > 0 && <Button key="clean" plain onPress={() => askClean($)}><Text color="warning">✂ Clean up</Text></Button>}
+          <Button key="report" plain onPress={() => openReport($)}><Text color="claude">📄 Report</Text></Button>
+          <Button key="rescan" plain onPress={() => refresh($)}><Text>⟳ Rescan</Text></Button>
         </Box>
       </Box>
     )

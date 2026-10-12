@@ -1,1 +1,1 @@
-{ "mcpServers": { "plugin-xray": { "command": "npx", "args": ["-y", "plugin-xray@0.3.3", "mcp"] } } }
+{ "mcpServers": { "plugin-xray": { "command": "npx", "args": ["-y", "plugin-xray@0.3.4", "mcp"] } } }

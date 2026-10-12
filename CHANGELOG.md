@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.4 (2026-10-12)
+
+- The band counts only plugins that cost tokens now as unused (switched-off ones are listed in the report and pane), so its saving is what removing them actually saves.
+- The band's buttons draw as plain icons.
+
 ## 0.3.3 (2026-10-12)
 
 - The X-ray band draws on top of other plugins' bands above the prompt (Baton's runs, for one) instead of only when nothing else is there.

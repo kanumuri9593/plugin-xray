@@ -51,7 +51,7 @@ export function snapshotOf(r) {
     connectors: r.totals.connectors,
     overlaps: r.overlaps.length,
     attention: r.digests.filter((d) => d.enabled && d.level === 'attention').length,
-    unused: r.cleanup.filter((x) => x.kind === 'plugin').length,
+    unused: r.cleanup.filter((x) => x.kind === 'plugin' && x.why !== 'switched off').length,
   };
 }
 
