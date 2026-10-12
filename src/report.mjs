@@ -22,9 +22,10 @@ export function reportEvery() {
 // Up to five things worth doing, most valuable first.
 export function recommend(r) {
   const out = [];
-  const plugins = r.cleanup.filter((x) => x.kind === 'plugin');
+  const names = (xs) => `${xs.slice(0, 4).map((x) => x.name).join(', ')}${xs.length > 4 ? '…' : ''}`;
+  const plugins = r.cleanup.filter((x) => x.kind === 'plugin' && x.why !== 'switched off');
   const saves = plugins.reduce((a, x) => a + x.saves, 0);
-  if (plugins.length) out.push({ level: 'save', title: `Remove ${plural(plugins.length, 'unused plugin')}`, detail: `${plugins.slice(0, 4).map((x) => x.name).join(', ')}${plugins.length > 4 ? '…' : ''}${saves ? `: saves ≈${fmtTokens(saves)} tokens every turn` : ''}.`, action: 'xray clean' });
+  if (plugins.length) out.push({ level: 'save', title: `Remove ${plural(plugins.length, 'unused plugin')}`, detail: `${names(plugins)}${saves ? `: saves ≈${fmtTokens(saves)} tokens every turn` : ''}.`, action: 'xray clean' });
   const red = r.digests.filter((d) => d.enabled && d.level === 'attention');
   for (const d of red.slice(0, 2)) {
     const f = d.findings.find((x) => x.level === 'attention');
@@ -34,8 +35,10 @@ export function recommend(r) {
   if (dup.length) out.push({ level: 'tidy', title: `Remove ${plural(dup.length, 'duplicate connector')}`, detail: `${dup.slice(0, 3).map((o) => o.members[0].server).join(', ')} ${dup.length === 1 ? 'is' : 'are'} installed more than once.`, action: 'xray --details' });
   const unpinned = r.digests.filter((d) => d.enabled && d.findings.some((f) => f.code === 'unpinned'));
   if (unpinned.length) out.push({ level: 'tidy', title: `Pin ${plural(unpinned.length, 'connector')} to a version`, detail: 'Unpinned npx/uvx connectors can fetch new code on every start. Add @<version> to the package.', action: 'xray --details' });
+  const off = r.cleanup.filter((x) => x.kind === 'plugin' && x.why === 'switched off');
+  if (off.length) out.push({ level: 'tidy', title: `Uninstall ${plural(off.length, 'switched-off plugin')}`, detail: `${names(off)}. They cost nothing now, but still update and take up space.`, action: 'xray clean' });
   const conns = r.cleanup.filter((x) => x.kind === 'connector');
-  if (conns.length) out.push({ level: 'tidy', title: `Review ${plural(conns.length, 'unused connector')}`, detail: `${conns.slice(0, 4).map((x) => x.name).join(', ')}${conns.length > 4 ? '…' : ''}.`, action: 'xray clean' });
+  if (conns.length) out.push({ level: 'tidy', title: `Review ${plural(conns.length, 'unused connector')}`, detail: `${names(conns)}.`, action: 'xray clean' });
   if (!out.length) out.push({ level: 'ok', title: 'All clear', detail: 'Nothing unused, duplicated or flagged.', action: null });
   return out.slice(0, 5);
 }

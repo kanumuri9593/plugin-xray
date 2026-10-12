@@ -1,6 +1,7 @@
 // Finds everything installed into AI coding agents on this machine: Claude Code
 // plugins, standalone skills, and MCP servers configured for each host.
 // Each host is one small adapter, so adding a new agent is one entry here.
+import fs from 'node:fs';
 import path from 'node:path';
 import { HOME, readJson, readText, exists, isDir, listDir } from './util.mjs';
 
@@ -83,8 +84,14 @@ export function claudePlugins() {
 
 export function claudeSkills() {
   const units = [];
+  const seen = new Set();
   for (const [label, dir] of [['user skills', path.join(claudeDir(), 'skills')], ['project skills', path.join(process.cwd(), '.claude', 'skills')]]) {
     if (!isDir(dir)) continue;
+    // Started from the home folder, the "project" skills are the user's own.
+    let real = dir;
+    try { real = fs.realpathSync(dir); } catch { /* keep dir */ }
+    if (seen.has(real)) continue;
+    seen.add(real);
     units.push({ kind: 'skills', host: 'claude-code', id: label, name: label, root: dir });
   }
   return units;

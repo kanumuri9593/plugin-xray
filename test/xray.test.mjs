@@ -207,3 +207,21 @@ test('install guard: unknown target asks, strict denies, never silent', async ()
     for (const [k, v] of [['CLAUDE_CONFIG_DIR', prev.c], ['XRAY_GATE', prev.g]]) if (v === undefined) delete process.env[k]; else process.env[k] = v;
   }
 });
+
+test('skills are counted once when started from the home folder', async () => {
+  const { claudeSkills } = await import('../src/discover.mjs');
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'xray-home-'));
+  fs.mkdirSync(path.join(home, '.claude', 'skills', 'pdf'), { recursive: true });
+  const prev = { c: process.env.CLAUDE_CONFIG_DIR, cwd: process.cwd() };
+  process.env.CLAUDE_CONFIG_DIR = path.join(home, '.claude');
+  process.chdir(home);
+  try {
+    assert.deepEqual(claudeSkills().map((u) => u.id), ['user skills']);
+  } finally {
+    process.chdir(prev.cwd);
+    if (prev.c === undefined) delete process.env.CLAUDE_CONFIG_DIR; else process.env.CLAUDE_CONFIG_DIR = prev.c;
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});

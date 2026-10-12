@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 (2026-10-12)
+
+- Started from the home folder, standalone skills were counted twice (as user and project skills). They are now counted once.
+- Recommendations keep unused plugins (which cost tokens) apart from switched-off ones (which only take up space).
+
 ## 0.3.0 (2026-10-12)
 
 - A band above the Claude Code prompt (terminal and desktop app): tokens every turn and the change since the last report, unused items, red and overlap counts, with one-click buttons for the pane, clean up, report, rescan and hide. `/xray-pane` opens the pane.
