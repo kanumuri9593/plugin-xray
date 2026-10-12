@@ -21,6 +21,8 @@ The audit, the hooks and `xray clean` never use the network. Only these do, and 
 
 To allow none of it, set `XRAY_OFFLINE=1` (or pass `--offline`). X-ray then scans local folders only. When the install check cannot look at something, it still asks the developer, with "could not check this install" as the reason, rather than letting it through silently. Install-time fetches give up after 10 seconds, so a blocked network never stalls the agent.
 
+Reports are written to `~/.plugin-xray/reports/` (owner-only files; move them with `XRAY_STATE_DIR`). Set `XRAY_REPORT=monthly` or `off` to change how often one is written at session start. Reports never leave the machine.
+
 To stop X-ray reading session logs for "last used", set `XRAY_USAGE=off`. Only tool names and timestamps are ever read from them; prompts and code are not.
 
 ## Roll it out to every developer (Claude Code managed settings)
@@ -62,7 +64,7 @@ Before adopting a new version, run `xray diff <current folder> <new folder>` on 
 ## Use it as a gate in CI
 
 ```yaml
-- run: npx -y plugin-xray@0.2.4 scan ./our-plugin --fail-on attention --offline
+- run: npx -y plugin-xray@0.3.0 scan ./our-plugin --fail-on attention --offline
 ```
 
 Fails the build when a plugin your team ships gains a red finding: reading credential files, downloading and running scripts, hidden instructions, or literal keys.

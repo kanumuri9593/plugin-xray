@@ -10,6 +10,8 @@ import { findOverlaps, overlapsFor } from './overlap.mjs';
 import { diffDigests } from './diff.mjs';
 import { scan } from './index.mjs';
 import { cardText } from './render.mjs';
+import { audit } from './index.mjs';
+import { writeReport, summarize, summaryText, reportEvery } from './report.mjs';
 
 const strict = () => process.env.XRAY_GATE === 'strict';
 const stateDir = () => process.env.CLAUDE_PLUGIN_DATA || path.join(HOME, '.plugin-xray');
@@ -45,14 +47,26 @@ function readStdin() {
   try { return JSON.parse((RAW ?? fs.readFileSync(0, 'utf8')) || '{}'); } catch { return {}; }
 }
 
-export function sessionStart() {
+export async function sessionStart() {
   const { digests, first, added, updated, enabled } = changesSinceSnapshot();
   saveSnap(digests);
+  // Onboarding on the first run, then a report every week (XRAY_REPORT).
+  let report = null;
+  try {
+    if (reportEvery() != null) {
+      const r = await audit();
+      const s = summarize(r);
+      if (first || s.reportDue) report = { ...writeReport(r), first };
+    }
+  } catch { /* a report is never worth failing a session start */ }
   const on = digests.filter((d) => d.enabled);
   const tokens = on.reduce((a, d) => a + d.contextTokens, 0);
   const overlaps = findOverlaps(digests);
   const msgs = [];
-  if (first) {
+  if (report) {
+    const head = report.first ? 'Welcome to Plugin X-ray. Your first scan' : `Your ${({ 1: 'daily', 7: 'weekly', 30: 'monthly' })[reportEvery()] || 'scheduled'} X-ray report`;
+    msgs.push(`${summaryText(report.summary, { title: head })}\nFull report: ${report.file}\nAsk "what can I remove?" or run /plugin-xray:xray to act on it.`);
+  } else if (first) {
     const flagged = digests.filter((d) => d.level === 'attention').length;
     msgs.push(`Plugin X-ray: ${plural(digests.length, 'item')} installed · ≈${fmtTokens(tokens)} tokens every turn · ${plural(overlaps.length, 'overlap')}${flagged ? ` · ${flagged} need attention` : ''}. Run /plugin-xray:xray for the audit.`);
   }

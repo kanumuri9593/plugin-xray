@@ -10,6 +10,7 @@ Usage
   xray scan <target>         Check a plugin or MCP server before installing it
                              <target>: ./folder · npm-package[@ver] · github:owner/repo · plugin@marketplace
   xray diff <old> <new>      Show what a new version can do that the old one could not
+  xray report [--open]       Write the HTML report with recommendations (also runs weekly by itself)
   xray clean [names…]        List unused or switched-off items with the command that removes each
                              add --yes to run those commands for the names given (or --all)
   xray mcp                   Run as an MCP server (tools: xray_audit, xray_scan, xray_diff)
@@ -38,6 +39,13 @@ function parse(argv) {
   return { flags, pos };
 }
 
+// Opens a file with the system's default app (a browser for the report).
+async function openFile(file) {
+  const { spawn } = await import('node:child_process');
+  const [bin, args] = process.platform === 'darwin' ? ['open', [file]] : process.platform === 'win32' ? ['cmd', ['/c', 'start', '', file]] : ['xdg-open', [file]];
+  try { spawn(bin, args, { stdio: 'ignore', detached: true }).unref(); } catch { /* no desktop */ }
+}
+
 const LEVELS = { ok: 0, review: 1, attention: 2 };
 function exitFor(level, failOn) {
   if (failOn && LEVELS[level] >= LEVELS[failOn]) process.exitCode = 1;
@@ -56,6 +64,20 @@ export async function main(argv) {
   if (cmd === 'hook') return runHook(args[0]);
   if (cmd === 'mcp') return (await import('./mcp.mjs')).serve();
 
+  if (cmd === 'report' || cmd === 'summary') {
+    const r = await audit();
+    const { writeReport, summarize, summaryText } = await import('./report.mjs');
+    if (cmd === 'summary') {
+      const s = summarize(r);
+      return console.log(flags.json ? JSON.stringify(s) : summaryText(s));
+    }
+    const out = writeReport(r);
+    if (flags.json) return console.log(JSON.stringify(out, null, 2));
+    console.log(summaryText(out.summary));
+    console.log(`\nReport: ${out.file}`);
+    if (flags.open) openFile(out.file);
+    return;
+  }
   if (cmd === 'clean') {
     const r = await audit();
     if (flags.json) return console.log(JSON.stringify(r.cleanup, null, 2));

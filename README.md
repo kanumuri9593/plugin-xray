@@ -83,6 +83,16 @@ Unused connectors  Unused connectors cost nothing per turn until their tools loa
 
 In Claude Code, ask "what can I remove?" and `/plugin-xray:xray` shows the same list, asks which ones to go, and removes only those. Free items (no text on every turn, no connectors) are never listed, nothing is suggested until there is about a week of history, and a connector's settings are saved before it is removed so it can be put back. Plugins synced from a claude.ai organisation are turned off there.
 
+## Inside Claude, and every week
+
+**A band above the prompt.** In Claude Code (the terminal and the desktop app), X-ray draws one line above the prompt: tokens every turn and how that moved since the last report, how many unused items could go, red and overlap counts. One-click buttons: ☰ open the X-ray pane, ✂ clean up (Claude asks which ones, then removes only those), 📄 open the report, ⟳ rescan, ✕ hide. `/xray-pane` opens the pane too.
+
+**A first scan, then a regular report.** The first session after install runs a full scan and tells you what it found and what to do first. After that, X-ray writes a fresh report once a week at session start and says what changed. Set `XRAY_REPORT=daily`, `monthly` or `off` to change that.
+
+**A colourful report.** `xray report --open` writes a self-contained HTML page (tokens every turn with a trend line, up to five recommendations, every item with its cost, last use and one-liner, and the clean-up list) to `~/.plugin-xray/reports/`, and keeps a history so each report shows what changed. `xray summary` prints the same in the terminal.
+
+**Everywhere else.** Codex, Cursor, VS Code, Gemini and any other MCP client get the same through the `xray_report` tool of `npx plugin-xray mcp`.
+
 ## What popular MCP servers cost
 
 Measured with `xray scan npm:<package> --tools` on 2026-10-12 (each server started once, its tool list sized at ~4 characters per token):
@@ -121,8 +131,8 @@ Ordinary commands pass straight through; the install check only wakes up for ins
 ### Any agent: as an MCP server
 
 ```bash
-claude mcp add plugin-xray -- npx -y plugin-xray@0.2.4 mcp     # Claude Code
-codex mcp add plugin-xray -- npx -y plugin-xray@0.2.4 mcp      # Codex
+claude mcp add plugin-xray -- npx -y plugin-xray@0.3.0 mcp     # Claude Code
+codex mcp add plugin-xray -- npx -y plugin-xray@0.3.0 mcp      # Codex
 ```
 
 Tools: `xray_audit`, `xray_scan` (check before installing), `xray_diff`. For Cursor, VS Code, Gemini CLI or Windsurf, add the same command to the host's MCP settings.
@@ -130,7 +140,7 @@ Tools: `xray_audit`, `xray_scan` (check before installing), `xray_diff`. For Cur
 ### In CI, for plugin authors
 
 ```yaml
-- run: npx -y plugin-xray@0.2.4 scan . --fail-on attention
+- run: npx -y plugin-xray@0.3.0 scan . --fail-on attention
 ```
 
 ## What it reads

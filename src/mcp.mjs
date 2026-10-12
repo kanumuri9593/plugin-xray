@@ -21,6 +21,11 @@ const TOOLS = [
     description: 'List what a newer version of a plugin or MCP server can do that the older one could not (new hosts, email addresses, hooks, connectors, capabilities).',
     inputSchema: { type: 'object', properties: { old: { type: 'string' }, new: { type: 'string' } }, required: ['old', 'new'], additionalProperties: false },
   },
+  {
+    name: 'xray_report',
+    description: 'Write the Plugin X-ray report (a colourful HTML page) and return its summary: tokens every turn, what changed since the last report, and up to five recommendations such as unused plugins to remove.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
 ];
 
 async function call(name, args) {
@@ -42,6 +47,11 @@ async function call(name, args) {
     const d = await diff(args.old, args.new);
     return `${d.from} → ${d.to}\n${d.changes.length ? d.changes.map((c) => `- ${c.text}`).join('\n') : 'No new capabilities.'}`;
   }
+  if (name === 'xray_report') {
+    const { writeReport, summaryText } = await import('./report.mjs');
+    const out = writeReport(await audit());
+    return `${summaryText(out.summary)}\n\nFull report: ${out.file}`;
+  }
   throw new Error(`unknown tool ${name}`);
 }
 
@@ -53,7 +63,7 @@ export function serve() {
     const { id, method, params } = msg;
     if (id === undefined) return; // notification
     try {
-      if (method === 'initialize') return send({ jsonrpc: '2.0', id, result: { protocolVersion: params?.protocolVersion || '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'plugin-xray', version: '0.2.4' } } });
+      if (method === 'initialize') return send({ jsonrpc: '2.0', id, result: { protocolVersion: params?.protocolVersion || '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'plugin-xray', version: '0.3.0' } } });
       if (method === 'tools/list') return send({ jsonrpc: '2.0', id, result: { tools: TOOLS } });
       if (method === 'tools/call') {
         try {

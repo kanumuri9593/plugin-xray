@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0 (2026-10-12)
+
+- A band above the Claude Code prompt (terminal and desktop app): tokens every turn and the change since the last report, unused items, red and overlap counts, with one-click buttons for the pane, clean up, report, rescan and hide. `/xray-pane` opens the pane.
+- Onboarding: the first session after install runs a full scan and suggests what to do first. After that a report is written weekly at session start (`XRAY_REPORT=daily|monthly|off`).
+- `xray report [--open]` writes a colourful self-contained HTML report with up to five recommendations and a history trend. `xray summary [--json]` prints the summary.
+- MCP tool `xray_report`, so Codex, Cursor and other agents get the same report.
+
 ## 0.2.4 (2026-10-12)
 
 - `XRAY_OFFLINE=1` / `--offline`: no network and no other programs; local folders only. `XRAY_USAGE=off` / `--no-usage`: do not read session logs.

@@ -105,10 +105,16 @@ test('one entry per installed plugin, no self-overlap, quiet first session', asy
     const { digest } = await scan(v2, { compare: false });
     assert.equal(digest.items.length, 2);
     assert.equal(findOverlaps([{ ...digest, enabled: true }]).filter((o) => o.type === 'similar-skill').length, 0);
-    const out = sessionStart();
+    process.env.XRAY_STATE_DIR = path.join(dir, 'state');
+    const out = await sessionStart();
     assert.ok(!/New since last session/.test(out.systemMessage || ''));
-    assert.match(out.systemMessage, /Run \/plugin-xray:xray/);
+    assert.match(out.systemMessage, /Welcome to Plugin X-ray/);
+    const html = out.systemMessage.match(/Full report: (.+\.html)/)[1];
+    assert.match(fs.readFileSync(html, 'utf8'), /Plugin X-ray report/);
+    const again = await sessionStart();
+    assert.ok(!/report/i.test(again.systemMessage || ''), 'no second report until one is due');
   } finally {
+    delete process.env.XRAY_STATE_DIR;
     for (const [k, v] of [['CLAUDE_CONFIG_DIR', prev.c], ['CLAUDE_PLUGIN_DATA', prev.d]]) if (v === undefined) delete process.env[k]; else process.env[k] = v;
   }
 });

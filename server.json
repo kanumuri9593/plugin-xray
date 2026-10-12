@@ -4,13 +4,13 @@
   "title": "Plugin X-ray",
   "description": "Check plugins and MCP servers before you trust them: permissions, token cost, overlaps, update diffs.",
   "repository": { "url": "https://github.com/kanumuri9593/plugin-xray", "source": "github" },
-  "version": "0.2.4",
+  "version": "0.3.0",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "plugin-xray",
-      "version": "0.2.4",
+      "version": "0.3.0",
       "runtimeHint": "npx",
       "transport": { "type": "stdio" },
       "packageArguments": [{ "type": "positional", "value": "mcp" }]

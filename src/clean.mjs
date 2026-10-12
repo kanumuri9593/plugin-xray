@@ -18,8 +18,8 @@ function short(text, n = 60) {
 }
 
 // One line on what an item is for.
-export function oneLiner(d) {
-  if (d.description) return short(d.description);
+export function oneLiner(d, n = 60) {
+  if (d.description) return short(d.description, n);
   if (d.kind === 'skills') return short(d.items.map((i) => i.name).join(', '), 60);
   if (d.kind === 'mcp') return short(`Connectors: ${d.servers.map((s) => s.name).join(', ')}`);
   return short(d.items[0]?.description || '');
