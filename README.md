@@ -93,6 +93,16 @@ In Claude Code, ask "what can I remove?" and `/plugin-xray:xray` shows the same 
 
 **Everywhere else.** Codex, Cursor, VS Code, Gemini and any other MCP client get the same through the `xray_report` tool of `npx plugin-xray mcp`.
 
+### What the in-app band runs, reads and sends
+
+For reviewers and security teams:
+
+- **Programs it starts:** only `node <plugin folder>/cli/xray.mjs summary --json` (to draw the band and pane), `node <plugin folder>/cli/xray.mjs report --open` (📄: writes the HTML report and opens it in your browser) and nothing else. Both are X-ray's own CLI from this repository.
+- **What it reads:** your installed plugins, skills and MCP server settings, and tool names and timestamps from your Claude Code session logs, all on this machine. Connector settings are read to flag credentials written in plain text; X-ray reports the key's name, never its value.
+- **What it sends:** nothing leaves your machine. The only prompt it submits is when you press ✂: "Run the Plugin X-ray cleanup: show what I can remove with what each one does, and ask me which ones to remove." That goes to your own Claude session and nowhere else.
+- **What it adds:** the `/xray-pane` command. Its `ui.render` hooks draw the band above the prompt (stacked above other plugins' bands) and the X-ray pane; they change no other call.
+- **`npx` in this README** is how you would run the CLI yourself; the plugin never downloads and runs anything.
+
 ## What popular MCP servers cost
 
 Measured with `xray scan npm:<package> --tools` on 2026-10-12 (each server started once, its tool list sized at ~4 characters per token):
