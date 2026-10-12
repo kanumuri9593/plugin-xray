@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.1 (2026-10-12)
+
+Fixes from the first real install.
+
+- Each installed plugin is counted once. Old cached versions, per-project copies and synced copies of the same plugin were listed as separate installs.
+- A plugin's command that wraps its own skill of the same name is no longer reported as an overlap.
+- Project MCP servers that repeat a user-level server word for word are no longer counted twice.
+- The first session after install shows only the summary line instead of a card for every installed item.
+
 ## 0.1.0 (2026-10-12)
 
 First release.

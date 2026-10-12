@@ -45,7 +45,6 @@ function readStdin() {
 }
 
 export function sessionStart() {
-  readStdin();
   const { digests, first, added, updated, enabled } = changesSinceSnapshot();
   saveSnap(digests);
   const on = digests.filter((d) => d.enabled);
@@ -56,8 +55,9 @@ export function sessionStart() {
     const flagged = digests.filter((d) => d.level === 'attention').length;
     msgs.push(`Plugin X-ray: ${plural(digests.length, 'item')} installed · ≈${fmtTokens(tokens)} tokens every turn · ${plural(overlaps.length, 'overlap')}${flagged ? ` · ${flagged} need attention` : ''}. Run /plugin-xray:xray for the audit.`);
   }
-  for (const d of [...added, ...enabled]) msgs.push(`New since last session:\n${cardText(d, overlapsFor(d, digests))}`);
-  for (const { d, diff } of updated) if (diff.changes.length) msgs.push(`${d.name} changed (${diff.from} → ${diff.to}):\n${diff.changes.slice(0, 6).map((c) => `- ${c.level === 'attention' ? '🔴' : '🟡'} ${c.text}`).join('\n')}`);
+  // The first run has nothing to compare against: the summary line is enough.
+  if (!first) for (const d of [...added, ...enabled]) msgs.push(`New since last session:\n${cardText(d, overlapsFor(d, digests))}`);
+  if (!first) for (const { d, diff } of updated) if (diff.changes.length) msgs.push(`${d.name} changed (${diff.from} → ${diff.to}):\n${diff.changes.slice(0, 6).map((c) => `- ${c.level === 'attention' ? '🔴' : '🟡'} ${c.text}`).join('\n')}`);
   if (!msgs.length) return {};
   const text = msgs.join('\n\n');
   return {

@@ -26,18 +26,24 @@ function enabledMap() {
 export function claudePlugins() {
   const base = path.join(claudeDir(), 'plugins');
   const enabled = enabledMap();
+  // One entry per plugin id: old cached versions and per-project copies of the
+  // same plugin are one install, not several.
   const seen = new Map();
   const add = (id, root, extra = {}) => {
-    if (!root || !isDir(root) || seen.has(root)) return;
+    if (!root || !isDir(root) || seen.has(id)) return;
     const name = id.split('@')[0];
     const state = enabled[id] ?? enabled[name];
-    seen.set(root, { kind: 'plugin', host: 'claude-code', id, name, root, enabled: state !== false, ...extra });
+    seen.set(id, { kind: 'plugin', host: 'claude-code', id, name, root, enabled: state !== false, ...extra });
   };
 
   const installed = readJson(path.join(base, 'installed_plugins.json'));
   for (const [id, entry] of Object.entries(installed?.plugins || {})) {
-    for (const e of Array.isArray(entry) ? entry : [entry]) add(id, e.installPath, { version: e.version, scope: e.scope });
+    const entries = (Array.isArray(entry) ? entry : [entry]).filter((e) => e?.installPath && isDir(e.installPath));
+    entries.sort((a, b) => String(b.lastUpdated || b.installedAt || '').localeCompare(String(a.lastUpdated || a.installedAt || '')));
+    const e = entries[0];
+    if (e) add(id, e.installPath, { version: e.version, scope: e.scope });
   }
+  const names = () => new Set([...seen.values()].map((p) => p.name));
 
   // Plugins synced from claude.ai organisations live outside installed_plugins.json.
   const synced = path.join(base, 'synced');
@@ -45,7 +51,7 @@ export function claudePlugins() {
     const manifest = readJson(path.join(synced, bucket, 'manifest.json'));
     for (const name of listDir(path.join(synced, bucket))) {
       const root = path.join(synced, bucket, name);
-      if (!isPluginRoot(root)) continue;
+      if (!isPluginRoot(root) || names().has(name)) continue;
       const m = manifest?.plugins?.find((p) => p.name === name);
       add(`${name}@${m?.marketplaceName || 'synced'}`, root, { version: m?.version });
     }
@@ -93,14 +99,18 @@ function codexServers(text) {
   return out;
 }
 
+// Project servers that repeat a user-level server word for word are the same
+// connector, so they are left out rather than counted twice.
+function projectServers() {
+  const cfg = readJson(path.join(HOME, '.claude.json'));
+  const user = serversFrom(cfg);
+  const all = { ...serversFrom(cfg?.projects?.[process.cwd()]), ...serversFrom(readJson(path.join(process.cwd(), '.mcp.json'))) };
+  return Object.fromEntries(Object.entries(all).filter(([n, s]) => JSON.stringify(user[n]) !== JSON.stringify(s)));
+}
+
 const HOSTS = [
   { host: 'claude-code', label: 'Claude Code (user)', read: () => serversFrom(readJson(path.join(HOME, '.claude.json'))) },
-  {
-    host: 'claude-code', label: 'Claude Code (this project)', read: () => ({
-      ...serversFrom(readJson(path.join(HOME, '.claude.json'))?.projects?.[process.cwd()]),
-      ...serversFrom(readJson(path.join(process.cwd(), '.mcp.json'))),
-    }),
-  },
+  { host: 'claude-code', label: 'Claude Code (this project)', read: projectServers },
   { host: 'claude-desktop', label: 'Claude desktop', read: () => serversFrom(readJson(path.join(MAC_SUPPORT, 'Claude', 'claude_desktop_config.json'))) },
   { host: 'codex', label: 'Codex', read: () => codexServers(readText(path.join(HOME, '.codex', 'config.toml'))) },
   { host: 'cursor', label: 'Cursor', read: () => serversFrom(readJson(path.join(HOME, '.cursor', 'mcp.json'))) },

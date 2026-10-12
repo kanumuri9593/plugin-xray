@@ -72,3 +72,36 @@ test('comments and shipped test files do not raise alarms', async () => {
   const { digest } = await scan(dir, { compare: false });
   assert.equal(digest.level, 'ok', JSON.stringify(digest.findings));
 });
+
+test('one entry per installed plugin, no self-overlap, quiet first session', async () => {
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const { claudePlugins } = await import('../src/discover.mjs');
+  const { sessionStart } = await import('../src/hooks.mjs');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'xray-cfg-'));
+  const mk = (p, files) => { for (const [f, t] of Object.entries(files)) { fs.mkdirSync(path.dirname(path.join(p, f)), { recursive: true }); fs.writeFileSync(path.join(p, f), t); } return p; };
+  const skill = { 'skills/boot/SKILL.md': '---\nname: boot\ndescription: Set up a new project\n---\n', 'commands/boot.md': '---\ndescription: Set up a new project\n---\n' };
+  const v1 = mk(path.join(dir, 'plugins/cache/m/demo/1.0.0'), skill);
+  const v2 = mk(path.join(dir, 'plugins/cache/m/demo/1.1.0'), skill);
+  mk(path.join(dir, 'plugins/synced/org/demo'), skill);
+  fs.writeFileSync(path.join(dir, 'plugins/installed_plugins.json'), JSON.stringify({ version: 2, plugins: { 'demo@m': [
+    { scope: 'project', installPath: v1, version: '1.0.0', lastUpdated: '2026-01-01T00:00:00Z' },
+    { scope: 'user', installPath: v2, version: '1.1.0', lastUpdated: '2026-02-01T00:00:00Z' },
+  ] } }));
+  const prev = { c: process.env.CLAUDE_CONFIG_DIR, d: process.env.CLAUDE_PLUGIN_DATA };
+  process.env.CLAUDE_CONFIG_DIR = dir;
+  process.env.CLAUDE_PLUGIN_DATA = path.join(dir, 'data');
+  try {
+    const plugins = claudePlugins();
+    assert.equal(plugins.length, 1);
+    assert.equal(plugins[0].version, '1.1.0');
+    const { digest } = await scan(v2, { compare: false });
+    assert.equal(digest.items.length, 2);
+    assert.equal(findOverlaps([{ ...digest, enabled: true }]).filter((o) => o.type === 'similar-skill').length, 0);
+    const out = sessionStart();
+    assert.ok(!/New since last session/.test(out.systemMessage || ''));
+    assert.match(out.systemMessage, /Run \/plugin-xray:xray/);
+  } finally {
+    for (const [k, v] of [['CLAUDE_CONFIG_DIR', prev.c], ['CLAUDE_PLUGIN_DATA', prev.d]]) if (v === undefined) delete process.env[k]; else process.env[k] = v;
+  }
+});

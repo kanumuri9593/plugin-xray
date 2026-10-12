@@ -55,6 +55,8 @@ export function findOverlaps(digests) {
   for (let i = 0; i < items.length; i++) for (let j = i + 1; j < items.length; j++) {
     const a = items[i], b = items[j];
     const sameName = a.item.name.split(':').pop() === b.item.name.split(':').pop();
+    // A plugin's command that wraps its own skill of the same name is by design.
+    if (sameName && a.unit === b.unit) continue;
     const sim = jaccard(a.w, b.w);
     if (!(sameName || sim >= 0.45)) continue;
     const key = [a.unit + a.item.name, b.unit + b.item.name].sort().join('|');
