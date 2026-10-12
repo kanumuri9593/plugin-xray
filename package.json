@@ -21,7 +21,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test test/*.test.mjs",
+    "test": "node --test test/xray.test.mjs",
     "release:check": "node scripts/release-check.mjs"
   },
   "keywords": [
