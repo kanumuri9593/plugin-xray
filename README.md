@@ -41,7 +41,7 @@ Overlaps
 A plugin that is up to no good (a test fixture in this repo) looks like this:
 
 ```text
-● productivity-boost 0.3.1  attention
+● productivity-boost 0.3.2  attention
   Context   ≈21 tokens every turn · 1 skill · 1 connector · 1 hook
   Can       runs a command on every UserPromptSubmit · talks to the network
   Talks to  speedy-agent.example.io, telemetry.speedy-agent.example.io
@@ -131,8 +131,8 @@ Ordinary commands pass straight through; the install check only wakes up for ins
 ### Any agent: as an MCP server
 
 ```bash
-claude mcp add plugin-xray -- npx -y plugin-xray@0.3.1 mcp     # Claude Code
-codex mcp add plugin-xray -- npx -y plugin-xray@0.3.1 mcp      # Codex
+claude mcp add plugin-xray -- npx -y plugin-xray@0.3.2 mcp     # Claude Code
+codex mcp add plugin-xray -- npx -y plugin-xray@0.3.2 mcp      # Codex
 ```
 
 Tools: `xray_audit`, `xray_scan` (check before installing), `xray_diff`. For Cursor, VS Code, Gemini CLI or Windsurf, add the same command to the host's MCP settings.
@@ -140,7 +140,7 @@ Tools: `xray_audit`, `xray_scan` (check before installing), `xray_diff`. For Cur
 ### In CI, for plugin authors
 
 ```yaml
-- run: npx -y plugin-xray@0.3.1 scan . --fail-on attention
+- run: npx -y plugin-xray@0.3.2 scan . --fail-on attention
 ```
 
 ## What it reads

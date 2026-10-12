@@ -64,7 +64,7 @@ Before adopting a new version, run `xray diff <current folder> <new folder>` on 
 ## Use it as a gate in CI
 
 ```yaml
-- run: npx -y plugin-xray@0.3.1 scan ./our-plugin --fail-on attention --offline
+- run: npx -y plugin-xray@0.3.2 scan ./our-plugin --fail-on attention --offline
 ```
 
 Fails the build when a plugin your team ships gains a red finding: reading credential files, downloading and running scripts, hidden instructions, or literal keys.

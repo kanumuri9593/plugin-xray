@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.2 (2026-10-12)
+
+- The report history keeps one entry per day, so running the report again the same day no longer shows a change against itself.
+- The trend line stays inside its card.
+
 ## 0.3.1 (2026-10-12)
 
 - Started from the home folder, standalone skills were counted twice (as user and project skills). They are now counted once.

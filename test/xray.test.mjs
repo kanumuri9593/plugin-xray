@@ -225,3 +225,23 @@ test('skills are counted once when started from the home folder', async () => {
     fs.rmSync(home, { recursive: true, force: true });
   }
 });
+
+test('a second report on the same day replaces the first in the history', async () => {
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'xray-rep-'));
+  const prev = { c: process.env.CLAUDE_CONFIG_DIR, s: process.env.XRAY_STATE_DIR };
+  process.env.CLAUDE_CONFIG_DIR = path.join(dir, '.claude');
+  process.env.XRAY_STATE_DIR = path.join(dir, 'state');
+  try {
+    const { audit } = await import('../src/index.mjs');
+    const { writeReport, readHistory } = await import('../src/report.mjs');
+    const r = await audit({ usage: false });
+    writeReport(r);
+    writeReport(r);
+    assert.equal(readHistory().length, 1);
+  } finally {
+    for (const [k, v] of [['CLAUDE_CONFIG_DIR', prev.c], ['XRAY_STATE_DIR', prev.s]]) if (v === undefined) delete process.env[k]; else process.env[k] = v;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

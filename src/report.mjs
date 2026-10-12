@@ -84,10 +84,11 @@ export function summarize(r, history = readHistory()) {
 
 // Writes the HTML page and a history entry. Returns where it went.
 export function writeReport(r) {
-  const history = readHistory();
+  const day = new Date().toISOString().slice(0, 10);
+  // One entry per day: a second report the same day replaces the first.
+  const history = readHistory().filter((e) => !String(e.at).startsWith(day));
   const s = summarize(r, history);
   const html = renderHtml(r, s, history);
-  const day = new Date().toISOString().slice(0, 10);
   const file = path.join(reportDir(), `xray-${day}.html`);
   writePrivate(file, html);
   writePrivate(path.join(reportDir(), 'latest.html'), html);
@@ -109,7 +110,7 @@ function spark(history, now) {
   if (pts.length < 2) return '';
   const max = Math.max(...pts, 1), w = 220, h = 48;
   const xy = pts.map((v, i) => `${(i / (pts.length - 1)) * w},${h - (v / max) * (h - 6) - 3}`);
-  return `<svg class="spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-label="Tokens per turn over the last ${pts.length} reports"><polyline points="${xy.join(' ')}"/></svg>`;
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="Tokens per turn over the last ${pts.length} reports"><polyline points="${xy.join(' ')}"/></svg>`;
 }
 
 export function renderHtml(r, s, history = []) {
@@ -134,7 +135,7 @@ h1{font-size:22px;margin:0}h2{font-size:17px;margin:28px 0 10px}.sub{color:var(-
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}.stat b{display:block;font-size:26px}.stat span{color:var(--dim);font-size:13px}
 .stat.hero{background:linear-gradient(135deg,#6d28d9,#0ea5e9);color:#fff;border:0}.stat.hero span{color:#ece9ff}
-.spark polyline{fill:none;stroke:#fff;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.spark{display:block;width:100%;height:40px;margin-top:10px;overflow:hidden}.spark polyline{vector-effect:non-scaling-stroke;fill:none;stroke:#fff;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
 ul.recs{list-style:none;padding:0;margin:0;display:grid;gap:10px}
 .rec{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:12px;padding:12px 14px;display:grid;gap:4px}
 .rec.attention{border-left-color:var(--attention)}.rec.save{border-left-color:var(--ok)}.rec.tidy{border-left-color:var(--review)}.rec span{color:var(--dim)}
