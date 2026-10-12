@@ -18,7 +18,8 @@ for (const surface of ['terminal', 'desktop'] as const) {
       runs.push([...e.argv])
       return { value: { exitCode: 0, stdout: JSON.stringify(SUMMARY), stderr: '', isStdoutTruncated: false, isStderrTruncated: false } } as any
     })
-    on('ui.render', async () => ({ type: 'Box', props: {}, children: [] }) as any)
+    // Another plugin's band beneath (Baton's runs): X-ray's line goes on top, theirs stays.
+    on('ui.render', async () => ({ type: 'Text', props: {}, children: ['Baton runs'] }) as any)
     on('command.register', async () => ({ value: true }) as any)
     on('session.start', async (_$, e) => ({ cwd: e.cwd }))
     on('prompt.submit', async (_$, e) => { submitted.push(e.text); return { text: e.text } as any })
@@ -30,6 +31,7 @@ for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ plugin: 'plugin-xray', surface, component: 'AbovePrompt', props: { hasSurvey: false } as any })
     expect(await ui.find({ text: '≈2.7k' })).toBeDefined()
     expect(await ui.find({ text: /2 unused/ })).toBeDefined()
+    expect(await ui.find({ text: 'Baton runs' })).toBeDefined()
     for (const key of ['pane', 'clean', 'report', 'rescan', 'hide']) expect(await ui.find({ key })).toBeDefined()
 
     await ui.press({ key: 'clean' })

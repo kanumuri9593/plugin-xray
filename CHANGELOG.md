@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.3 (2026-10-12)
+
+- The X-ray band draws on top of other plugins' bands above the prompt (Baton's runs, for one) instead of only when nothing else is there.
+
 ## 0.3.2 (2026-10-12)
 
 - The report history keeps one entry per day, so running the report again the same day no longer shows a change against itself.

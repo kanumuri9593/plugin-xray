@@ -62,9 +62,12 @@ export const register: Register = on => {
     const busy = await read($, isBusy)
     const { Box, Button, Text } = $.ui.resolve(e)
     const saves = s.rows.filter(r => r.remove).reduce((a, r) => a + r.tokens, 0)
+    // The band has one instance: draw X-ray's line on top of whatever the
+    // plugins beneath draw (Baton's runs, say) instead of replacing it.
+    const below = await next(e)
 
-    return (
-      <Box flexDirection="row" gap={1}>
+    const line = (
+      <Box key="xray" flexDirection="row" gap={1}>
         <Text bold color="claude">X-ray</Text>
         <Text bold>≈{k(s.tokens)}</Text>
         <Text dimColor>tokens/turn</Text>
@@ -82,6 +85,7 @@ export const register: Register = on => {
         <Button key="hide" onPress={() => update($, isHidden, () => true)}><Text dimColor>✕</Text></Button>
       </Box>
     )
+    return below ? <Box flexDirection="column">{line}{below}</Box> : line
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {

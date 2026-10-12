@@ -63,7 +63,7 @@ export function serve() {
     const { id, method, params } = msg;
     if (id === undefined) return; // notification
     try {
-      if (method === 'initialize') return send({ jsonrpc: '2.0', id, result: { protocolVersion: params?.protocolVersion || '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'plugin-xray', version: '0.3.2' } } });
+      if (method === 'initialize') return send({ jsonrpc: '2.0', id, result: { protocolVersion: params?.protocolVersion || '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'plugin-xray', version: '0.3.3' } } });
       if (method === 'tools/list') return send({ jsonrpc: '2.0', id, result: { tools: TOOLS } });
       if (method === 'tools/call') {
         try {
