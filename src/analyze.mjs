@@ -25,7 +25,7 @@ const CODE_RULES = [
   { code: 'reads-secret-files', level: 'attention', re: /(\.ssh\/|id_rsa|id_ed25519|\.aws\/credentials|\.npmrc|\.netrc|\.git-credentials|security find-(generic|internet)-password|Login\.keychain|\.config\/gcloud|\.kube\/config)/ },
   { code: 'dumps-environment', level: 'attention', re: /(JSON\.stringify\(\s*process\.env\s*\)|json\.dumps\(\s*(dict\()?os\.environ|\benv\s*\|\s*(curl|nc|base64)|printenv\s*\|\s*(curl|nc))/ },
   { code: 'reads-secrets-env', level: 'info', re: /(process\.env\.[A-Z0-9_]*(KEY|TOKEN|SECRET|PASSWORD|PASS)\b|os\.environ(\.get)?\(?\[?["'][A-Z0-9_]*(KEY|TOKEN|SECRET|PASSWORD)["'])/ },
-  { code: 'dynamic-code', level: 'review', re: /(\beval\(|new Function\(|vm\.runIn|exec\(compile|__import__\(|importlib\.import_module\()/ },
+  { code: 'dynamic-code', level: 'info', re: /(\beval\(|new Function\(|vm\.runIn|exec\(compile|__import__\(|importlib\.import_module\()/ },
   { code: 'download-and-run', level: 'attention', re: /((curl|wget)[^\n|]*\|\s*(ba|z)?sh\b|(ba|z)?sh\s+-c\s+["']?\$\((curl|wget)|iex\s*\(\s*iwr|Invoke-Expression)/ },
   { code: 'destructive', level: 'review', re: /(rm\s+-rf\s+(\/|~|\$HOME)|(^|["'`;&|]\s*)sudo\s+[a-z]|chmod\s+777|\bmkfs\b|\bdd\s+if=)/ },
 ];
@@ -45,6 +45,8 @@ function stripRegexLiterals(line) {
 function scanText(rel, text, findings, rules) {
   let lines = text.split(/\r?\n/);
   if (JS_FILE.test(rel)) lines = lines.map(stripRegexLiterals);
+  // Comments describe code; they do not run.
+  if (CODE_EXT.test(rel)) lines = lines.map((l) => (/^\s*(\/\/|#(?!!)|\*|\/\*)/.test(l) ? '' : l));
   for (const rule of rules) {
     const hits = [];
     for (let i = 0; i < lines.length && hits.length < 3; i++) if (rule.re.test(lines[i])) hits.push(`${rel}:${i + 1}`);
@@ -209,8 +211,10 @@ export function analyzePlugin(unit) {
   for (const f of codeFiles.slice(0, 400)) {
     const t = readText(path.join(root, f));
     if (!t || t.length > 2_000_000) continue;
+    // Test files ship in many packages but never run when you use them; their
+    // fake attacks and fake addresses would only add noise.
+    if (TEST_FILE.test(f)) continue;
     scanText(f, t, findings, CODE_RULES);
-    if (TEST_FILE.test(f)) continue; // addresses in tests are not where the code sends data
     hostsIn(t, hosts);
     emailsIn(t, emails);
   }
