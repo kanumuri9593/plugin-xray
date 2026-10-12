@@ -158,3 +158,20 @@ test('usage from session logs marks unused plugins for cleanup', async () => {
     if (prev === undefined) delete process.env.CLAUDE_CONFIG_DIR; else process.env.CLAUDE_CONFIG_DIR = prev;
   }
 });
+
+test('offline mode never fetches or starts programs', async () => {
+  const { resolveTarget } = await import('../src/fetch.mjs');
+  const { listTools } = await import('../src/tools.mjs');
+  const { deepScan } = await import('../src/deep.mjs');
+  process.env.XRAY_OFFLINE = '1';
+  try {
+    assert.throws(() => resolveTarget('npm:left-pad@1.3.0'), /XRAY_OFFLINE/);
+    assert.throws(() => resolveTarget('github:octocat/Hello-World'), /XRAY_OFFLINE/);
+    assert.match((await listTools({ command: 'node', args: ['-e', ''] })).error, /XRAY_OFFLINE/);
+    assert.match(deepScan(repo).error, /XRAY_OFFLINE/);
+    const { digest } = await scan(path.join(fx, 'good-v1'), { compare: false });
+    assert.equal(digest.level, 'ok', 'local folders still scan');
+  } finally {
+    delete process.env.XRAY_OFFLINE;
+  }
+});

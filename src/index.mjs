@@ -9,6 +9,7 @@ import { deepScan } from './deep.mjs';
 import { listTools } from './tools.mjs';
 import { readUsage, attachUsage } from './usage.mjs';
 import { cleanupList } from './clean.mjs';
+import { usageAllowed } from './policy.mjs';
 
 export { DIGEST_VERSION } from './analyze.mjs';
 export { diffDigests, findOverlaps };
@@ -31,7 +32,7 @@ export async function countTools(digests, configs) {
 export async function audit({ tools = false, usage = true, days = 30 } = {}) {
   const units = discover();
   const digests = units.map(analyze);
-  const used = usage ? readUsage({ days }) : null;
+  const used = usage && usageAllowed() ? readUsage({ days }) : null;
   if (used) attachUsage(digests, used);
   if (tools) {
     const configs = new Map();

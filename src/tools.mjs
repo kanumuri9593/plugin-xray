@@ -2,9 +2,11 @@
 // server, so it only runs when asked (--tools) and only for stdio servers.
 import { spawn } from 'node:child_process';
 import { estimateTokens } from './util.mjs';
+import { offline } from './policy.mjs';
 
 export function listTools(cfg, { timeout = 20_000, cwd } = {}) {
   return new Promise((resolve) => {
+    if (offline()) return resolve({ ok: false, error: 'skipped: XRAY_OFFLINE is set (counting tools starts the server)' });
     if (!cfg?.command) return resolve({ ok: false, error: 'remote server: tools are listed after you sign in' });
     const env = { ...process.env, ...(cfg.env || {}) };
     let child;
@@ -29,6 +31,6 @@ export function listTools(cfg, { timeout = 20_000, cwd } = {}) {
         }
       }
     });
-    child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'plugin-xray', version: '0.2.3' } } }) + '\n');
+    child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'plugin-xray', version: '0.2.4' } } }) + '\n');
   });
 }

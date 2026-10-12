@@ -7,14 +7,16 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { offline } from './policy.mjs';
 
 export const REA_VERSION = process.env.XRAY_REA_VERSION || '6.4.0';
 const KINDS = { 'child-process': 'program launches', request: 'network calls', resource: 'file opens', 'config-source': 'config / env reads' };
 
 export function deepScan(root, { timeout = 600_000 } = {}) {
+  if (offline()) return { ok: false, error: 'skipped: XRAY_OFFLINE is set (the deep scan downloads REA with npx)' };
   const out = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'xray-rea-')), 'rea.json');
   const fd = fs.openSync(out, 'w');
-  const r = spawnSync('npx', ['-y', `rea-agents@${REA_VERSION}`, 'analyze-javascript-application', root, '--json'], { stdio: ['ignore', fd, 'pipe'], timeout });
+  const r = spawnSync(process.platform === 'win32' ? 'npx.cmd' : 'npx', ['-y', `rea-agents@${REA_VERSION}`, 'analyze-javascript-application', root, '--json'], { stdio: ['ignore', fd, 'pipe'], timeout, shell: process.platform === 'win32' });
   fs.closeSync(fd);
   if (r.status !== 0) return { ok: false, error: (r.stderr || '').toString().split('\n').filter(Boolean).slice(-2).join(' ') || `exit ${r.status}` };
   let doc;

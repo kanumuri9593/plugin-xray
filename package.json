@@ -1,6 +1,6 @@
 {
   "name": "plugin-xray",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "mcpName": "io.github.kanumuri9593/plugin-xray",
   "description": "See what an AI agent plugin or MCP server can do before you trust it: permissions, token cost, overlaps and version changes.",
   "type": "module",
@@ -15,7 +15,10 @@
     "cli",
     "src",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "SECURITY.md",
+    "CHANGELOG.md",
+    "docs/enterprise.md"
   ],
   "engines": {
     "node": ">=20"

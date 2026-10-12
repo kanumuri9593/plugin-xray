@@ -121,8 +121,8 @@ Ordinary commands pass straight through; the install check only wakes up for ins
 ### Any agent: as an MCP server
 
 ```bash
-claude mcp add plugin-xray -- npx -y plugin-xray@0.2.3 mcp     # Claude Code
-codex mcp add plugin-xray -- npx -y plugin-xray@0.2.3 mcp      # Codex
+claude mcp add plugin-xray -- npx -y plugin-xray@0.2.4 mcp     # Claude Code
+codex mcp add plugin-xray -- npx -y plugin-xray@0.2.4 mcp      # Codex
 ```
 
 Tools: `xray_audit`, `xray_scan` (check before installing), `xray_diff`. For Cursor, VS Code, Gemini CLI or Windsurf, add the same command to the host's MCP settings.
@@ -130,7 +130,7 @@ Tools: `xray_audit`, `xray_scan` (check before installing), `xray_diff`. For Cur
 ### In CI, for plugin authors
 
 ```yaml
-- run: npx -y plugin-xray@0.2.3 scan . --fail-on attention
+- run: npx -y plugin-xray@0.2.4 scan . --fail-on attention
 ```
 
 ## What it reads
@@ -162,6 +162,10 @@ Every result is a small JSON digest (`--json`, schema `xray.digest/v1`). The CLI
 - **Static reading has limits.** Code that builds its behaviour at runtime, or hides it in a dependency, can get past the quick scan. `--deep` narrows that gap; it does not close it.
 - **Token numbers are estimates** (about 4 characters per token). Remote connectors only reveal their tool lists after you sign in.
 - **It only removes what you pick.** `xray clean` prints the commands; nothing is uninstalled unless you name it and pass `--yes`, or approve it in Claude.
+
+## In a company
+
+No runtime dependencies, no telemetry, nothing from scanned plugins is executed, and `XRAY_OFFLINE=1` turns off every network call. Roll it out to every developer with Claude Code managed settings, mirror it to an internal git host, or use it as a CI gate: see [docs/enterprise.md](docs/enterprise.md) and [SECURITY.md](SECURITY.md).
 
 ## Development
 

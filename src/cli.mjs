@@ -22,6 +22,8 @@ Options
   --deep       Also run a full static analysis with REA (slower, JavaScript only)
   --details    Show every overlap and a card per item
   --fail-on <review|attention>   Exit 1 when anything reaches this level (for CI)
+  --offline    No network and no other programs: local folders only (or XRAY_OFFLINE=1)
+  --no-usage   Do not read Claude Code session logs for last-used data (or XRAY_USAGE=off)
 `;
 
 function parse(argv) {
@@ -43,6 +45,8 @@ function exitFor(level, failOn) {
 
 export async function main(argv) {
   const { flags, pos } = parse(argv);
+  if (flags.offline) process.env.XRAY_OFFLINE = '1';
+  if (flags['no-usage']) process.env.XRAY_USAGE = 'off';
   const [cmd, ...args] = pos;
   if (flags.help || cmd === 'help') return console.log(HELP);
   if (flags.version || cmd === 'version') {

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.4 (2026-10-12)
+
+- `XRAY_OFFLINE=1` / `--offline`: no network and no other programs; local folders only. `XRAY_USAGE=off` / `--no-usage`: do not read session logs.
+- The deep scan runs on Windows (`npx.cmd`).
+- SECURITY.md lists everything X-ray reads, writes, fetches and runs. docs/enterprise.md covers managed-settings rollout, proxies and internal registries, mirrors and air-gapped use, and CI gating.
+
 ## 0.2.3 (2026-10-12)
 
 - An installed plugin with no `enabledPlugins` entry counts as off, matching Claude Code, so turned-off plugins no longer add to the per-turn total.

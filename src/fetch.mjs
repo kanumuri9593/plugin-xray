@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { HOME, readJson, exists, isDir, listDir } from './util.mjs';
+import { needsNetwork } from './policy.mjs';
 
 function tmp() { return fs.mkdtempSync(path.join(os.tmpdir(), 'xray-')); }
 
@@ -15,6 +16,7 @@ function run(cmd, args, opts = {}) {
 }
 
 export function fromNpm(spec) {
+  needsNetwork(`Fetching ${spec} from npm`);
   const dir = tmp();
   // --ignore-scripts: packing never runs lifecycle scripts, but be explicit.
   const out = run('npm', ['pack', spec, '--silent', '--ignore-scripts', '--pack-destination', dir]).trim().split('\n').pop();
@@ -25,6 +27,7 @@ export function fromNpm(spec) {
 }
 
 export function fromGit(url, ref) {
+  needsNetwork(`Cloning ${url}`);
   const dir = tmp();
   const args = ['clone', '--depth', '1', '--quiet'];
   if (ref) args.push('--branch', ref);
