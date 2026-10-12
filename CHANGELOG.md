@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3 (2026-10-12)
+
+- An installed plugin with no `enabledPlugins` entry counts as off, matching Claude Code, so turned-off plugins no longer add to the per-turn total.
+
 ## 0.2.2 (2026-10-12)
 
 - Each use is dated by its own log line, so a session resumed today no longer makes last month's calls look recent.

@@ -89,13 +89,17 @@ test('one entry per installed plugin, no self-overlap, quiet first session', asy
   fs.writeFileSync(path.join(dir, 'plugins/installed_plugins.json'), JSON.stringify({ version: 2, plugins: { 'demo@m': [
     { scope: 'project', installPath: v1, version: '1.0.0', lastUpdated: '2026-01-01T00:00:00Z' },
     { scope: 'user', installPath: v2, version: '1.1.0', lastUpdated: '2026-02-01T00:00:00Z' },
-  ] } }));
+  ], 'gone@m': [{ scope: 'user', installPath: v1, version: '1.0.0' }] } }));
+  fs.writeFileSync(path.join(dir, 'settings.json'), JSON.stringify({ enabledPlugins: { 'demo@m': true } }));
   const prev = { c: process.env.CLAUDE_CONFIG_DIR, d: process.env.CLAUDE_PLUGIN_DATA };
   process.env.CLAUDE_CONFIG_DIR = dir;
   process.env.CLAUDE_PLUGIN_DATA = path.join(dir, 'data');
   try {
     const plugins = claudePlugins();
-    assert.deepEqual(plugins.map((p) => p.name).sort(), ['demo', 'notes']);
+    assert.deepEqual(plugins.map((p) => p.name).sort(), ['demo', 'gone', 'notes']);
+    assert.equal(plugins.find((p) => p.name === 'gone').enabled, false, 'no settings entry means off');
+    assert.equal(plugins.find((p) => p.name === 'demo').enabled, true);
+    assert.equal(plugins.find((p) => p.name === 'notes').enabled, true, 'synced plugins are on unless switched off');
     assert.equal(plugins.find((p) => p.name === 'demo').version, '1.1.0');
     assert.match(plugins.find((p) => p.name === 'notes').root, /notes~g2$/);
     const { digest } = await scan(v2, { compare: false });

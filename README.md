@@ -121,8 +121,8 @@ Ordinary commands pass straight through; the install check only wakes up for ins
 ### Any agent: as an MCP server
 
 ```bash
-claude mcp add plugin-xray -- npx -y plugin-xray@0.2.2 mcp     # Claude Code
-codex mcp add plugin-xray -- npx -y plugin-xray@0.2.2 mcp      # Codex
+claude mcp add plugin-xray -- npx -y plugin-xray@0.2.3 mcp     # Claude Code
+codex mcp add plugin-xray -- npx -y plugin-xray@0.2.3 mcp      # Codex
 ```
 
 Tools: `xray_audit`, `xray_scan` (check before installing), `xray_diff`. For Cursor, VS Code, Gemini CLI or Windsurf, add the same command to the host's MCP settings.
@@ -130,7 +130,7 @@ Tools: `xray_audit`, `xray_scan` (check before installing), `xray_diff`. For Cur
 ### In CI, for plugin authors
 
 ```yaml
-- run: npx -y plugin-xray@0.2.2 scan . --fail-on attention
+- run: npx -y plugin-xray@0.2.3 scan . --fail-on attention
 ```
 
 ## What it reads

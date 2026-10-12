@@ -29,11 +29,16 @@ export function claudePlugins() {
   // One entry per plugin id: old cached versions and per-project copies of the
   // same plugin are one install, not several.
   const seen = new Map();
+  // An installed plugin is on only when settings say true; with no entry at
+  // all Claude Code leaves it off. Synced organisation plugins are on unless
+  // switched off.
+  const hasSettings = Object.keys(enabled).length > 0;
   const add = (id, root, extra = {}) => {
     if (!root || !isDir(root) || seen.has(id)) return;
     const name = id.split('@')[0];
     const state = enabled[id] ?? enabled[name];
-    seen.set(id, { kind: 'plugin', host: 'claude-code', id, name, root, enabled: state !== false, ...extra });
+    const on = extra.source === 'synced' || !hasSettings ? state !== false : state === true;
+    seen.set(id, { kind: 'plugin', host: 'claude-code', id, name, root, enabled: on, ...extra });
   };
 
   const installed = readJson(path.join(base, 'installed_plugins.json'));
