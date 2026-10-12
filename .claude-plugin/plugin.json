@@ -18,5 +18,9 @@
     "tokens"
   ],
   "types": "./types/index.d.ts",
-  "icon": "./.claude-plugin/icon.png"
+  "icon": "./.claude-plugin/icon.png",
+  "documentationUrl": "https://github.com/kanumuri9593/plugin-xray#readme",
+  "supportUrl": "https://github.com/kanumuri9593/plugin-xray/issues",
+  "privacyPolicyUrl": "https://github.com/kanumuri9593/plugin-xray#privacy",
+  "termsOfServiceUrl": "https://github.com/kanumuri9593/plugin-xray/blob/main/LICENSE"
 }

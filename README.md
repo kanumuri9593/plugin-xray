@@ -200,6 +200,10 @@ Plugin X-ray has no runtime dependencies and needs Node 20 or later.
 
 The deep scan uses [REA: Reverse Engineer Anything](https://github.com/morluto/rea) (MIT), run through `npx` at a pinned version.
 
+## Privacy
+
+Plugin X-ray collects no data. There is no telemetry, no account and no server. Everything it reads (your installed plugins, skills and MCP settings, and tool names and timestamps from your Claude Code session logs) stays on your machine, and its reports are files in `~/.plugin-xray/`. It uses the network only when you ask it to check something you have not installed yet (see [docs/enterprise.md](docs/enterprise.md)), and `XRAY_OFFLINE=1` turns that off.
+
 ## License
 
 MIT © Yeswanth Varma Kanumuri
