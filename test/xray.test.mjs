@@ -133,11 +133,18 @@ test('usage from session logs marks unused plugins for cleanup', async () => {
     assert.equal(ds[0].usage.count, 1);
     assert.equal(ds[1].usage.count, 1);
     assert.equal(ds[2].usage.count, 0);
-    const list = cleanupList(ds);
+    assert.equal(cleanupList(ds).length, 0, 'too little history to suggest anything');
+    const list = cleanupList(ds, { minDays: 0 });
     assert.deepEqual(list.map((x) => x.name), ['vercel', 'old-thing']);
     assert.equal(list[0].command, 'claude plugin uninstall vercel@official');
     assert.equal(list[0].what, 'Does a thing');
     assert.equal(list[1].command, 'claude mcp remove old-thing -s user');
+    const { removeItem } = await import('../src/clean.mjs');
+    const ran = [];
+    const res = removeItem(list[0], { run: (bin, args) => { ran.push([bin, ...args].join(' ')); return { status: 0 }; } });
+    assert.ok(res.ok);
+    assert.deepEqual(ran, ['claude plugin uninstall vercel@official']);
+    assert.match(res.message, /claude plugin install vercel@official/);
   } finally {
     if (prev === undefined) delete process.env.CLAUDE_CONFIG_DIR; else process.env.CLAUDE_CONFIG_DIR = prev;
   }

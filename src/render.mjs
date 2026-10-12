@@ -41,10 +41,11 @@ export function renderAudit(report, { details = false } = {}) {
   lines.push(`${c.bold('Plugin X-ray')}  ${plural(digests.length, 'item')} · ${c.bold('≈' + fmtTokens(totals.contextTokens))} tokens on every turn${totals.toolTokens != null ? ` + ≈${fmtTokens(totals.toolTokens)} in local tool lists` : ''} · ${plural(totals.connectors, 'connector')} · ${plural(overlaps.length, 'overlap')}`);
   lines.push('');
   const w = Math.min(28, Math.max(...digests.map((d) => d.name.length), 8) + 1);
-  const removable = new Set((report.cleanup || []).map((x) => x.name));
+  const removable = new Set((report.cleanup || []).filter((x) => x.kind === 'plugin').map((x) => x.name));
+  const anyUsage = digests.some((d) => d.usage);
   for (const d of [...digests].sort((a, b) => b.contextTokens - a.contextTokens)) {
     const use = usageText(d, ago);
-    const useCol = use == null ? '' : removable.has(d.name) ? c.red(pad(use, 13)) : /^used/.test(use) ? c.green(pad(use, 13)) : c.yellow(pad(use, 13));
+    const useCol = use == null ? (anyUsage ? ' '.repeat(13) : '') : removable.has(d.name) ? c.red(pad(use, 13)) : /^used/.test(use) ? c.green(pad(use, 13)) : c.yellow(pad(use, 13));
     lines.push(`  ${DOT[d.level]} ${pad(d.name, w)}${lpad('≈' + fmtTokens(d.contextTokens), 7)}  ${useCol}${c.dim(pad(details ? summaryLine(d) : oneLiner(d), 60))} ${WORD[d.level]}`);
   }
   if (overlaps.length) {
@@ -52,13 +53,14 @@ export function renderAudit(report, { details = false } = {}) {
     for (const o of overlaps.slice(0, details ? 99 : 8)) lines.push(`  ${c.yellow('⇄')} ${o.label}  ${c.dim(o.suggestion)}`);
     if (!details && overlaps.length > 8) lines.push(c.dim(`  … ${overlaps.length - 8} more (--details)`));
   }
-  if (report.cleanup?.length) {
-    const saves = report.cleanup.reduce((a, x) => a + x.saves, 0);
+  const plugins = (report.cleanup || []).filter((x) => x.kind === 'plugin');
+  if (plugins.length) {
+    const saves = plugins.reduce((a, x) => a + x.saves, 0);
     lines.push('', `${c.bold('Clean up')}${saves ? c.dim(`  removing these saves ≈${fmtTokens(saves)} tokens every turn`) : ''}`);
-    const cw = Math.min(24, Math.max(...report.cleanup.map((x) => x.name.length)) + 1);
-    for (const x of report.cleanup.slice(0, details ? 99 : 12)) lines.push(`  ${c.red('✕')} ${pad(x.name, cw)}${pad(x.why, 22)} ${c.dim(x.command || x.note || '')}`);
-    if (!details && report.cleanup.length > 12) lines.push(c.dim(`  … ${report.cleanup.length - 12} more (--details)`));
-    lines.push(c.dim('  Run `xray clean` to pick what to remove.'));
+    const cw = Math.min(24, Math.max(...plugins.map((x) => x.name.length)) + 1);
+    for (const x of plugins) lines.push(`  ${c.red('✕')} ${pad(x.name, cw)}${lpad(x.saves ? '≈' + fmtTokens(x.saves) : '', 6)}  ${x.why}`);
+    const conn = report.cleanup.length - plugins.length;
+    lines.push(c.dim(`  ${conn ? `Plus ${plural(conn, 'unused connector')}. ` : ''}Run \`xray clean\` to see what each one does and remove the ones you pick.`));
   }
   const flagged = digests.filter((d) => d.level !== 'ok');
   if (flagged.length) {
@@ -105,19 +107,34 @@ export function renderDiff(diff) {
   return lines.join('\n');
 }
 
-export function renderClean(list, { md = false } = {}) {
-  if (!list.length) return md ? 'Nothing to clean up: everything installed has been used recently.' : c.green('Nothing to clean up: everything installed has been used recently.');
-  const saves = list.reduce((a, x) => a + x.saves, 0);
+export function renderClean(list, { md = false, history = null } = {}) {
+  const young = history && (!history.sessions || Date.now() - history.from < 7 * 86400000);
+  const ok = young ? 'Not enough history yet: X-ray needs about a week of your Claude Code sessions to tell what you use.' : 'Nothing to clean up: everything installed has been used recently.';
+  if (!list.length) return md ? ok : c.green(ok);
+  const plugins = list.filter((x) => x.kind === 'plugin'), conns = list.filter((x) => x.kind !== 'plugin');
+  const saves = plugins.reduce((a, x) => a + x.saves, 0);
+  const head = `Removing the plugins below saves ≈${fmtTokens(saves)} tokens every turn.`;
+  const connNote = 'Unused connectors cost nothing per turn until their tools load; remove them only if you are sure. Their settings are saved first, so each can be put back.';
   if (md) {
-    const rows = list.map((x) => `| ${x.name} | ${x.what || ''} | ${x.why} | ${x.saves ? '≈' + fmtTokens(x.saves) : ''} | ${x.command ? '`' + x.command + '`' : x.note} |`);
-    return [`**Clean up**: removing all of these saves ≈${fmtTokens(saves)} tokens every turn.`, '', '| Item | What it does | Why | Saves/turn | Remove with |', '|---|---|---|---|---|', ...rows].join('\n');
+    const row = (x) => `| ${x.name} | ${x.what || ''} | ${x.why}${x.flagged ? ' · 🔴 findings' : ''} | ${x.saves ? '≈' + fmtTokens(x.saves) : ''} | ${x.command ? '`' + x.command + '`' : x.note} |`;
+    const table = (xs) => ['| Item | What it does | Why listed | Saves/turn | Remove with |', '|---|---|---|---|---|', ...xs.map(row)];
+    const out = [`**Clean up**: ${head}`, ''];
+    if (plugins.length) out.push(...table(plugins));
+    if (conns.length) out.push('', `**Unused connectors**: ${connNote}`, '', ...table(conns));
+    return out.join('\n');
   }
   const w = Math.min(24, Math.max(...list.map((x) => x.name.length)) + 1);
-  const lines = [`${c.bold('Clean up')}  removing all of these saves ≈${fmtTokens(saves)} tokens every turn`, ''];
-  for (const x of list) {
-    lines.push(`  ${c.red('✕')} ${pad(x.name, w)}${lpad(x.saves ? '≈' + fmtTokens(x.saves) : '', 6)}  ${pad(x.why, 22)} ${c.dim(x.what || '')}`);
-    lines.push(`    ${' '.repeat(w)}${c.dim(x.command || x.note)}`);
+  const ww = Math.max(...list.map((x) => x.why.length)) + 2;
+  const line = (x) => [
+    `  ${c.red('✕')} ${pad(x.name, w)}${lpad(x.saves ? '≈' + fmtTokens(x.saves) : '', 6)}  ${pad(x.why, ww)}${c.dim(x.what || '')}${x.flagged ? ' ' + c.red('●') : ''}`,
+    `    ${' '.repeat(w + 8)}${c.dim(x.command || x.note)}`,
+  ];
+  const lines = [`${c.bold('Clean up')}  ${head}`, ''];
+  for (const x of plugins) lines.push(...line(x));
+  if (conns.length) {
+    lines.push('', `${c.bold('Unused connectors')}  ${c.dim(connNote)}`, '');
+    for (const x of conns) lines.push(...line(x));
   }
-  lines.push('', c.dim('Remove some: xray clean <name> <name> --yes    Remove all: xray clean --all --yes'), c.dim('Undo: claude plugin install <plugin>@<marketplace>'));
+  lines.push('', c.dim('Remove some: xray clean <name> <name> --yes    All plugins above: xray clean --all --yes'), c.dim('Undo a plugin: claude plugin install <plugin>@<marketplace>. Undo a connector: the command printed when it is removed.'));
   return lines.join('\n');
 }

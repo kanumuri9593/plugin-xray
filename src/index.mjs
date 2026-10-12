@@ -31,7 +31,8 @@ export async function countTools(digests, configs) {
 export async function audit({ tools = false, usage = true, days = 30 } = {}) {
   const units = discover();
   const digests = units.map(analyze);
-  if (usage) attachUsage(digests, readUsage({ days }));
+  const used = usage ? readUsage({ days }) : null;
+  if (used) attachUsage(digests, used);
   if (tools) {
     const configs = new Map();
     for (const [i, u] of units.entries()) for (const s of digests[i].servers) configs.set(`${digests[i].id}|${s.name}`, u.servers?.[s.name] || serverConfigFromPlugin(u.root, s.name));
@@ -44,6 +45,7 @@ export async function audit({ tools = false, usage = true, days = 30 } = {}) {
     digests,
     overlaps,
     cleanup: cleanupList(digests),
+    history: used ? { days: used.days, from: used.from, sessions: used.sessions } : null,
     totals: {
       items: digests.length,
       contextTokens: on.reduce((a, d) => a + d.contextTokens, 0),

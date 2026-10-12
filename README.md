@@ -68,17 +68,20 @@ X-ray reads your own Claude Code session logs on this machine (nothing leaves it
 
 ```text
 $ xray clean
-Clean up  removing all of these saves ≈4.6k tokens every turn
+Clean up  Removing the plugins below saves ≈2.5k tokens every turn.
 
-  ✕ vercel       ≈2.3k  not used in 30 days    Deploy and manage Vercel projects…
-                        claude plugin uninstall vercel@claude-plugins-official
-  ✕ feature-dev   ≈239  not used in 30 days    Feature development workflow with specialized agents…
-                        claude plugin uninstall feature-dev@claude-plugins-official
+  ✕ vercel        ≈2.3k  not used since Sep 23  Vercel AI Gateway expert guidance
+                         claude plugin uninstall vercel@claude-plugins-official
+  ✕ feature-dev    ≈239  not used since Sep 23  Comprehensive feature development workflow with specialized…
+                         claude plugin uninstall feature-dev@claude-plugins-official
 
-Remove some: xray clean <name> <name> --yes    Remove all: xray clean --all --yes
+Unused connectors  Unused connectors cost nothing per turn until their tools load; remove them only if you are sure. …
+
+  ✕ aws-docs             not used since Sep 23  Claude Code (user) connector (awslabs.aws-documentation-mcp-server)
+                         claude mcp remove aws-docs -s user
 ```
 
-In Claude Code, ask "what can I remove?" and `/plugin-xray:xray` shows the same list, asks which ones to go, and removes only those. Free items (no text on every turn, no connectors) are never listed. Plugins synced from a claude.ai organisation are turned off there.
+In Claude Code, ask "what can I remove?" and `/plugin-xray:xray` shows the same list, asks which ones to go, and removes only those. Free items (no text on every turn, no connectors) are never listed, nothing is suggested until there is about a week of history, and a connector's settings are saved before it is removed so it can be put back. Plugins synced from a claude.ai organisation are turned off there.
 
 ## What popular MCP servers cost
 
@@ -118,8 +121,8 @@ Ordinary commands pass straight through; the install check only wakes up for ins
 ### Any agent: as an MCP server
 
 ```bash
-claude mcp add plugin-xray -- npx -y plugin-xray@0.2.0 mcp     # Claude Code
-codex mcp add plugin-xray -- npx -y plugin-xray@0.2.0 mcp      # Codex
+claude mcp add plugin-xray -- npx -y plugin-xray@0.2.1 mcp     # Claude Code
+codex mcp add plugin-xray -- npx -y plugin-xray@0.2.1 mcp      # Codex
 ```
 
 Tools: `xray_audit`, `xray_scan` (check before installing), `xray_diff`. For Cursor, VS Code, Gemini CLI or Windsurf, add the same command to the host's MCP settings.
@@ -127,7 +130,7 @@ Tools: `xray_audit`, `xray_scan` (check before installing), `xray_diff`. For Cur
 ### In CI, for plugin authors
 
 ```yaml
-- run: npx -y plugin-xray@0.2.0 scan . --fail-on attention
+- run: npx -y plugin-xray@0.2.1 scan . --fail-on attention
 ```
 
 ## What it reads

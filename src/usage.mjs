@@ -14,8 +14,9 @@ function claudeDir() { return process.env.CLAUDE_CONFIG_DIR || path.join(HOME, '
 // outside [a-zA-Z0-9_-] with "_".
 export const toolName = (s) => String(s).replace(/[^a-zA-Z0-9_-]/g, '_');
 
-function logFiles(since) {
+function logFiles(since, stats = {}) {
   const out = [];
+  stats.oldest = null;
   const root = path.join(claudeDir(), 'projects');
   const stack = [root];
   while (stack.length) {
@@ -25,7 +26,10 @@ function logFiles(since) {
       let st;
       try { st = fs.statSync(p); } catch { continue; }
       if (st.isDirectory()) stack.push(p);
-      else if (name.endsWith('.jsonl') && st.mtimeMs >= since && st.size <= MAX_FILE) out.push({ p, mtime: st.mtimeMs });
+      else if (name.endsWith('.jsonl')) {
+        stats.oldest = Math.min(stats.oldest ?? Infinity, st.birthtimeMs || st.mtimeMs, st.mtimeMs);
+        if (st.mtimeMs >= since && st.size <= MAX_FILE) out.push({ p, mtime: st.mtimeMs });
+      }
     }
   }
   return out;
@@ -36,7 +40,8 @@ function logFiles(since) {
 //   skills  skill, command or agent names as invoked ("vercel:deploy", "pdf")
 export function readUsage({ days = 30, now = Date.now() } = {}) {
   const since = now - days * DAY;
-  const files = logFiles(since);
+  const stats = {};
+  const files = logFiles(since, stats);
   const tools = new Map(), skills = new Map();
   const hit = (m, k, t) => { const e = m.get(k) || { count: 0, last: 0 }; e.count++; e.last = Math.max(e.last, t); m.set(k, e); };
   for (const { p, mtime } of files) {
@@ -47,7 +52,9 @@ export function readUsage({ days = 30, now = Date.now() } = {}) {
     for (const m of text.matchAll(/"subagent_type":"([^"]+)"/g)) hit(skills, m[1], mtime);
     for (const m of text.matchAll(/<command-name>\/?([a-zA-Z0-9:_-]+)<\/command-name>/g)) hit(skills, m[1], mtime);
   }
-  return { days, since, sessions: files.length, tools, skills };
+  // When the logs are younger than the window, "not used in 30 days" would
+  // overstate it; `from` is where the evidence actually starts.
+  return { days, since, from: Math.max(since, stats.oldest ?? since), sessions: files.length, tools, skills };
 }
 
 function merge(entries) {
@@ -67,12 +74,14 @@ export function attachUsage(digests, u) {
       const prefix = `plugin_${toolName(name)}_`;
       const hits = [...u.tools].filter(([k]) => k.startsWith(prefix)).map(([, v]) => v);
       hits.push(...[...u.skills].filter(([k]) => k.startsWith(`${name}:`)).map(([, v]) => v));
-      d.usage = { days: u.days, ...merge(hits) };
+      d.usage = { days: u.days, since: u.since, from: u.from, ...merge(hits) };
+      // The same connector used from another install (say ~/.claude.json).
+      d.usage.otherCopy = d.servers.map((s) => s.name).filter((n) => u.tools.get(toolName(n))?.count);
     } else if (d.kind === 'skills') {
-      d.usage = { days: u.days, ...merge(d.items.map((i) => u.skills.get(i.name))) };
+      d.usage = { days: u.days, since: u.since, from: u.from, ...merge(d.items.map((i) => u.skills.get(i.name))) };
     } else if (d.kind === 'mcp') {
-      for (const s of d.servers) s.usage = { days: u.days, ...merge([u.tools.get(toolName(s.name))]) };
-      d.usage = { days: u.days, ...merge(d.servers.map((s) => s.usage.count ? s.usage : null)) };
+      for (const s of d.servers) s.usage = { days: u.days, since: u.since, from: u.from, ...merge([u.tools.get(toolName(s.name))]) };
+      d.usage = { days: u.days, since: u.since, from: u.from, ...merge(d.servers.map((s) => s.usage.count ? s.usage : null)) };
     }
   }
   return digests;
@@ -82,4 +91,10 @@ export function ago(ts, now = Date.now()) {
   if (!ts) return null;
   const d = Math.floor((now - ts) / DAY);
   return d <= 0 ? 'today' : d === 1 ? 'yesterday' : `${d}d ago`;
+}
+
+// "not used in 30 days", or "not used since Sep 23" when that is all the history there is.
+export function unusedText(u) {
+  if (u.from && u.from > u.since + 86400000) return `not used since ${new Date(u.from).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+  return `not used in ${u.days} days`;
 }

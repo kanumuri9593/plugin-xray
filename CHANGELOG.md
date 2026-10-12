@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1 (2026-10-12)
+
+- `xray clean` saves a connector's settings before `claude mcp remove` and prints the command that restores it. `--all` covers plugins only; connectors are removed only when named.
+- Says "not used since Sep 23" when the session history is shorter than 30 days, and suggests nothing until there is about a week of it.
+- A plugin whose connector you use from another install says so ("you use your other playwright").
+- Unused connectors get their own section; columns line up when a reason is long or an agent has no usage data.
+
 ## 0.2.0 (2026-10-12)
 
 - The audit shows one line on what each item does and when you last used it, read from your local Claude Code session logs (last 30 days; nothing leaves your machine).
