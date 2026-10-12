@@ -52,7 +52,7 @@ export function cleanupList(digests, { minDays = 7, now = Date.now() } = {}) {
   const out = [];
   for (const d of digests) {
     if (!d.usage || d.name === 'Plugin X-ray') continue;
-    if (d.usage.from && now - d.usage.from < minDays * 86400000 && d.enabled) continue;
+    if (minDays && d.usage.from && now - d.usage.from < minDays * 86400000 && d.enabled) continue;
     // Free items (no per-turn text, no connectors) are left alone even when unused.
     const costs = d.contextTokens >= 100 || d.servers.length > 0;
     if (d.kind === 'plugin' && (!d.enabled || (!d.usage.count && costs))) {
