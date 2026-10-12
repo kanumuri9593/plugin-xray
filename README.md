@@ -114,7 +114,7 @@ Then run `/plugin-xray:xray` any time for the audit, or ask Claude what you can 
 |---|---|
 | A session starts | Compares what is installed with last time and shows a card for anything new or updated, including what the update changed. |
 | A plugin is turned on mid-session | Shows the card right away. With `XRAY_GATE=strict` it holds a plugin marked 🔴 until you decide. |
-| The agent runs `claude plugin install` or `claude mcp add` | Scans the target first and asks you, with the card as the reason. |
+| The agent runs `claude plugin install` or `claude mcp add` | Scans the target first and asks you, with the card as the reason. If it cannot check it (offline, unknown marketplace), it says so and still asks. With `XRAY_GATE=strict` both red findings and unchecked installs are refused. |
 
 Ordinary commands pass straight through; the install check only wakes up for install commands.
 

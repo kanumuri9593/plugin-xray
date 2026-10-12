@@ -175,3 +175,29 @@ test('offline mode never fetches or starts programs', async () => {
     delete process.env.XRAY_OFFLINE;
   }
 });
+
+test('install guard: unknown target asks, strict denies, never silent', async () => {
+  const { runHook } = await import('../src/hooks.mjs');
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const call = async (command) => {
+    let out = '';
+    const orig = process.stdout.write.bind(process.stdout);
+    process.stdout.write = (s) => { out += s; return true; };
+    try { await runHook('pre-tool-use', JSON.stringify({ tool_name: 'Bash', tool_input: { command } })); } finally { process.stdout.write = orig; }
+    return JSON.parse(out).hookSpecificOutput;
+  };
+  const prev = { c: process.env.CLAUDE_CONFIG_DIR, g: process.env.XRAY_GATE };
+  process.env.CLAUDE_CONFIG_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'xray-guard-'));
+  try {
+    const t0 = Date.now();
+    const asked = await call('claude plugin install nothing@nowhere');
+    assert.equal(asked.permissionDecision, 'ask');
+    assert.match(asked.permissionDecisionReason, /could not check/);
+    assert.ok(Date.now() - t0 < 5000, 'no network wait for an unknown marketplace');
+    process.env.XRAY_GATE = 'strict';
+    assert.equal((await call('claude plugin install nothing@nowhere')).permissionDecision, 'deny');
+  } finally {
+    for (const [k, v] of [['CLAUDE_CONFIG_DIR', prev.c], ['XRAY_GATE', prev.g]]) if (v === undefined) delete process.env[k]; else process.env[k] = v;
+  }
+});

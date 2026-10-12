@@ -3,6 +3,8 @@
 ## 0.2.4 (2026-10-12)
 
 - `XRAY_OFFLINE=1` / `--offline`: no network and no other programs; local folders only. `XRAY_USAGE=off` / `--no-usage`: do not read session logs.
+- The install check never lets an install through silently: if it cannot check the target it asks with the reason, and `XRAY_GATE=strict` refuses both red and unchecked installs. Its fetches time out after 10 seconds, and `plugin@marketplace` no longer falls back to npm.
+- The snapshot file is owner-only.
 - The deep scan runs on Windows (`npx.cmd`).
 - SECURITY.md lists everything X-ray reads, writes, fetches and runs. docs/enterprise.md covers managed-settings rollout, proxies and internal registries, mirrors and air-gapped use, and CI gating.
 

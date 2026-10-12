@@ -19,7 +19,7 @@ The audit, the hooks and `xray clean` never use the network. Only these do, and 
 | `--deep` | your npm registry | `npx rea-agents@6.4.0` (pin another with `XRAY_REA_VERSION`) |
 | `--tools` | whatever the scanned server connects to | starts the server once |
 
-To allow none of it, set `XRAY_OFFLINE=1` (or pass `--offline`). X-ray then scans local folders only, and the install check lets installs through without a card instead of fetching anything.
+To allow none of it, set `XRAY_OFFLINE=1` (or pass `--offline`). X-ray then scans local folders only. When the install check cannot look at something, it still asks the developer, with "could not check this install" as the reason, rather than letting it through silently. Install-time fetches give up after 10 seconds, so a blocked network never stalls the agent.
 
 To stop X-ray reading session logs for "last used", set `XRAY_USAGE=off`. Only tool names and timestamps are ever read from them; prompts and code are not.
 
@@ -40,7 +40,7 @@ Put this in the managed settings file (`/Library/Application Support/ClaudeCode/
 - `enabledPlugins: true` in managed settings turns it on for everyone; users cannot turn it off.
 - Drop the `env` line if developers may fetch scan targets from your registry.
 - If you use `allowManagedHooksOnly`, X-ray's hooks still run, because hooks from plugins force-enabled in managed settings are trusted.
-- To make X-ray hold a plugin with red findings until the developer decides, add `"XRAY_GATE": "strict"` to `env`.
+- To fail closed, add `"XRAY_GATE": "strict"` to `env`: installs with red findings, and installs X-ray could not check, are refused instead of asked.
 
 Details: [Claude Code plugins for organisations](https://code.claude.com/docs/en/plugins/org) and [managed settings](https://code.claude.com/docs/en/managed-settings).
 

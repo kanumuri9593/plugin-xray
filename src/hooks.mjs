@@ -11,15 +11,16 @@ import { diffDigests } from './diff.mjs';
 import { scan } from './index.mjs';
 import { cardText } from './render.mjs';
 
-const STRICT = process.env.XRAY_GATE === 'strict';
+const strict = () => process.env.XRAY_GATE === 'strict';
 const stateDir = () => process.env.CLAUDE_PLUGIN_DATA || path.join(HOME, '.plugin-xray');
 const snapFile = () => path.join(stateDir(), 'snapshot.json');
 
 function loadSnap() { return readJson(snapFile()); }
 function saveSnap(digests) {
-  fs.mkdirSync(stateDir(), { recursive: true });
+  fs.mkdirSync(stateDir(), { recursive: true, mode: 0o700 });
   const slim = digests.map(({ items, ...d }) => ({ ...d, items: items.map(({ name, kind, tokens }) => ({ name, kind, tokens })) }));
-  fs.writeFileSync(snapFile(), JSON.stringify({ savedAt: new Date().toISOString(), digests: slim }, null, 1));
+  fs.writeFileSync(snapFile(), JSON.stringify({ savedAt: new Date().toISOString(), digests: slim }, null, 1), { mode: 0o600 });
+  try { fs.chmodSync(snapFile(), 0o600); } catch { /* Windows */ }
 }
 
 const key = (d) => `${d.host}|${d.id}`;
@@ -75,7 +76,7 @@ export function configChange() {
   if (!fresh.length) return {};
   const text = fresh.map((d) => cardText(d, overlapsFor(d, digests))).join('\n\n');
   const risky = fresh.filter((d) => d.level === 'attention');
-  if (STRICT && risky.length) return { decision: 'block', reason: `Plugin X-ray held this change:\n${text}`, systemMessage: `Plugin X-ray held ${risky.map((d) => d.name).join(', ')}. Set XRAY_GATE=off to allow.` };
+  if (strict() && risky.length) return { decision: 'block', reason: `Plugin X-ray held this change:\n${text}`, systemMessage: `Plugin X-ray held ${risky.map((d) => d.name).join(', ')}. Set XRAY_GATE=off to allow.` };
   return { systemMessage: `Plugin X-ray:\n${text}` };
 }
 
@@ -118,6 +119,8 @@ export async function preToolUse() {
   if (input.tool_name !== 'Bash' || !cmd) return {};
   const intent = installIntent(cmd);
   if (!intent) return {};
+  // At install time a slow or blocked network must not hold the agent up.
+  process.env.XRAY_FETCH_TIMEOUT ||= '10000';
   let text;
   try {
     if (intent.type === 'plugin') {
@@ -135,8 +138,14 @@ export async function preToolUse() {
       text = cardText(pseudo, findOverlaps([pseudo, ...installed]).filter((o) => o.members.some((m) => m.unit === intent.name))) + (pseudo.hosts.length ? `\n- talks to ${pseudo.hosts.slice(0, 6).join(', ')}` : '') + deepNote;
     }
   } catch (e) {
-    return {}; // never get in the way when the scan itself fails
+    // Could not check (offline, blocked, unknown marketplace). Say so rather
+    // than letting it through silently; XRAY_GATE=strict refuses it.
+    const why = String(e.message || e).split('\n')[0].replace(/^Command failed: /, '').slice(0, 200);
+    const reason = `Plugin X-ray could not check this install: ${why}`;
+    return { hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: strict() ? 'deny' : 'ask', permissionDecisionReason: strict() ? `${reason}\nXRAY_GATE=strict blocks installs that cannot be checked.` : reason } };
   }
+  const risky = /🔴/.test(text.split('\n')[0]);
+  if (strict() && risky) return { hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: `Plugin X-ray blocked this install (XRAY_GATE=strict):\n${text}` } };
   return { hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'ask', permissionDecisionReason: `Plugin X-ray checked this install:\n${text}` } };
 }
 

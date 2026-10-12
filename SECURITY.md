@@ -20,6 +20,8 @@ Please report security issues privately through GitHub: **Security → Report a 
 - No runtime dependencies. The npm package is plain Node.js source with no install scripts.
 - Scanned code is read as text. It is never imported, required or executed, except by the opt-in `--tools`.
 - Before removing a connector, its settings (which may contain keys) are saved to `~/.plugin-xray/removed/` with owner-only permissions so it can be restored.
+- The install check never fails silently: if it cannot check something it asks, and with `XRAY_GATE=strict` it refuses. Its fetches time out after 10 seconds.
+- Its snapshot and removal backups are owner-only files.
 - `XRAY_OFFLINE=1` (or `--offline`) turns off every row above that uses the network or runs another program.
 - `XRAY_USAGE=off` (or `--no-usage`) stops it reading session logs.
 

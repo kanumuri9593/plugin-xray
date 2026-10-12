@@ -12,7 +12,7 @@ function tmp() { return fs.mkdtempSync(path.join(os.tmpdir(), 'xray-')); }
 
 function run(cmd, args, opts = {}) {
   const win = process.platform === 'win32' && cmd === 'npm';
-  return execFileSync(win ? 'npm.cmd' : cmd, args, { shell: win, stdio: ['ignore', 'pipe', 'pipe'], timeout: opts.timeout ?? 60_000, encoding: 'utf8', ...opts });
+  return execFileSync(win ? 'npm.cmd' : cmd, args, { shell: win, stdio: ['ignore', 'pipe', 'pipe'], timeout: opts.timeout ?? (Number(process.env.XRAY_FETCH_TIMEOUT) || 60_000), encoding: 'utf8', ...opts });
 }
 
 export function fromNpm(spec) {
@@ -73,9 +73,11 @@ export function resolveTarget(target) {
   if ((m = target.match(/^(?:github:|https:\/\/github\.com\/)([\w.-]+\/[\w.-]+?)(?:\.git)?(?:#(.+))?\/?$/))) return fromGit(`https://github.com/${m[1]}.git`, m[2]);
   if (/^(https?|git):\/\//.test(target)) return fromGit(target);
   if (target.startsWith('npm:')) return fromNpm(target.slice(4));
+  // plugin@marketplace never falls back to npm: that would fetch an unrelated package.
   if (/^[\w.-]+@[\w.-]+$/.test(target) && !/@\d/.test(target)) {
     const r = fromMarketplace(target);
     if (r) return r;
+    throw new Error(`${target}: that marketplace or plugin is not added on this machine, so it could not be checked`);
   }
   return fromNpm(target);
 }
