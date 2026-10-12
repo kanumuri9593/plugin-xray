@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0 (2026-10-12)
+
+- The audit shows one line on what each item does and when you last used it, read from your local Claude Code session logs (last 30 days; nothing leaves your machine).
+- New `xray clean`: unused or switched-off plugins and connectors, what removing each saves, and the exact command. `--yes` runs it for the names you give; `/plugin-xray:xray` asks which ones to remove and removes only those.
+
 ## 0.1.2 (2026-10-12)
 
 - Plugins synced from a claude.ai organisation are counted once: when a re-sync leaves `name` and `name~g2` side by side, only the newest generation is read.

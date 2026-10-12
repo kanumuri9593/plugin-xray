@@ -62,6 +62,24 @@ What changed mailer@1.0.15 → mailer@1.0.16
   + now has the email address archive@giftshop-mail.example.club in its code
 ```
 
+## Clean up what you don't use
+
+X-ray reads your own Claude Code session logs on this machine (nothing leaves it) to see when each plugin, skill and connector was last used. The audit puts that next to what each one costs, and `xray clean` turns it into a short list:
+
+```text
+$ xray clean
+Clean up  removing all of these saves ≈4.6k tokens every turn
+
+  ✕ vercel       ≈2.3k  not used in 30 days    Deploy and manage Vercel projects…
+                        claude plugin uninstall vercel@claude-plugins-official
+  ✕ feature-dev   ≈239  not used in 30 days    Feature development workflow with specialized agents…
+                        claude plugin uninstall feature-dev@claude-plugins-official
+
+Remove some: xray clean <name> <name> --yes    Remove all: xray clean --all --yes
+```
+
+In Claude Code, ask "what can I remove?" and `/plugin-xray:xray` shows the same list, asks which ones to go, and removes only those. Free items (no text on every turn, no connectors) are never listed. Plugins synced from a claude.ai organisation are turned off there.
+
 ## What popular MCP servers cost
 
 Measured with `xray scan npm:<package> --tools` on 2026-10-12 (each server started once, its tool list sized at ~4 characters per token):
@@ -87,7 +105,7 @@ All 14 measured servers together come to ≈82k tokens when a client loads every
 /plugin install plugin-xray@plugin-xray
 ```
 
-Then run `/plugin-xray:xray` any time for the audit. The plugin also adds three hooks:
+Then run `/plugin-xray:xray` any time for the audit, or ask Claude what you can remove. The plugin also adds three hooks:
 
 | When | What X-ray does |
 |---|---|
@@ -100,8 +118,8 @@ Ordinary commands pass straight through; the install check only wakes up for ins
 ### Any agent: as an MCP server
 
 ```bash
-claude mcp add plugin-xray -- npx -y plugin-xray@0.1.2 mcp     # Claude Code
-codex mcp add plugin-xray -- npx -y plugin-xray@0.1.2 mcp      # Codex
+claude mcp add plugin-xray -- npx -y plugin-xray@0.2.0 mcp     # Claude Code
+codex mcp add plugin-xray -- npx -y plugin-xray@0.2.0 mcp      # Codex
 ```
 
 Tools: `xray_audit`, `xray_scan` (check before installing), `xray_diff`. For Cursor, VS Code, Gemini CLI or Windsurf, add the same command to the host's MCP settings.
@@ -109,7 +127,7 @@ Tools: `xray_audit`, `xray_scan` (check before installing), `xray_diff`. For Cur
 ### In CI, for plugin authors
 
 ```yaml
-- run: npx -y plugin-xray@0.1.2 scan . --fail-on attention
+- run: npx -y plugin-xray@0.2.0 scan . --fail-on attention
 ```
 
 ## What it reads
@@ -140,7 +158,7 @@ Every result is a small JSON digest (`--json`, schema `xray.digest/v1`). The CLI
 - **It reports; it does not judge.** 🔴 means "look at this", with the file and line. Plenty of honest tools run programs or talk to the network. That is often their job.
 - **Static reading has limits.** Code that builds its behaviour at runtime, or hides it in a dependency, can get past the quick scan. `--deep` narrows that gap; it does not close it.
 - **Token numbers are estimates** (about 4 characters per token). Remote connectors only reveal their tool lists after you sign in.
-- **It never changes your setup.** To turn something off, use `/plugin` or `claude plugin disable <name>`.
+- **It only removes what you pick.** `xray clean` prints the commands; nothing is uninstalled unless you name it and pass `--yes`, or approve it in Claude.
 
 ## Development
 

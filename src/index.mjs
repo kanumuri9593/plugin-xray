@@ -7,6 +7,8 @@ import { resolveTarget, cleanup } from './fetch.mjs';
 import { diffDigests } from './diff.mjs';
 import { deepScan } from './deep.mjs';
 import { listTools } from './tools.mjs';
+import { readUsage, attachUsage } from './usage.mjs';
+import { cleanupList } from './clean.mjs';
 
 export { DIGEST_VERSION } from './analyze.mjs';
 export { diffDigests, findOverlaps };
@@ -26,9 +28,10 @@ export async function countTools(digests, configs) {
   for (const d of digests) d.toolTokens = d.servers.reduce((a, s) => a + (s.tools?.ok ? s.tools.tokens : 0), 0);
 }
 
-export async function audit({ tools = false } = {}) {
+export async function audit({ tools = false, usage = true, days = 30 } = {}) {
   const units = discover();
   const digests = units.map(analyze);
+  if (usage) attachUsage(digests, readUsage({ days }));
   if (tools) {
     const configs = new Map();
     for (const [i, u] of units.entries()) for (const s of digests[i].servers) configs.set(`${digests[i].id}|${s.name}`, u.servers?.[s.name] || serverConfigFromPlugin(u.root, s.name));
@@ -40,6 +43,7 @@ export async function audit({ tools = false } = {}) {
     generatedAt: new Date().toISOString(),
     digests,
     overlaps,
+    cleanup: cleanupList(digests),
     totals: {
       items: digests.length,
       contextTokens: on.reduce((a, d) => a + d.contextTokens, 0),

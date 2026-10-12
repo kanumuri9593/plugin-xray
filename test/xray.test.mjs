@@ -108,3 +108,37 @@ test('one entry per installed plugin, no self-overlap, quiet first session', asy
     for (const [k, v] of [['CLAUDE_CONFIG_DIR', prev.c], ['CLAUDE_PLUGIN_DATA', prev.d]]) if (v === undefined) delete process.env[k]; else process.env[k] = v;
   }
 });
+
+test('usage from session logs marks unused plugins for cleanup', async () => {
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const { readUsage, attachUsage } = await import('../src/usage.mjs');
+  const { cleanupList } = await import('../src/clean.mjs');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'xray-use-'));
+  fs.mkdirSync(path.join(dir, 'projects/p'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'projects/p/s.jsonl'), [
+    '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t1","name":"mcp__plugin_baton_baton__run","input":{}}]}}',
+    '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Skill","input":{"skill":"docs:write"}}]}}',
+    '{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t3","name":"mcp__context7__resolve","input":{}}]}}',
+  ].join('\n'));
+  const prev = process.env.CLAUDE_CONFIG_DIR;
+  process.env.CLAUDE_CONFIG_DIR = dir;
+  try {
+    const u = readUsage({ days: 30 });
+    const mk = (id, extra = {}) => ({ id, name: id.split('@')[0], kind: 'plugin', host: 'claude-code', enabled: true, contextTokens: 500, items: [], servers: [], level: 'ok', description: 'Does a thing. More text.', ...extra });
+    const ds = attachUsage([
+      mk('baton@baton'), mk('docs@x'), mk('vercel@official'), mk('tiny@x', { contextTokens: 20 }),
+      { id: 'Claude Code (user)', name: 'Claude Code (user)', kind: 'mcp', host: 'claude-code', enabled: true, contextTokens: 0, items: [], level: 'ok', servers: [{ name: 'context7' }, { name: 'old-thing' }] },
+    ], u);
+    assert.equal(ds[0].usage.count, 1);
+    assert.equal(ds[1].usage.count, 1);
+    assert.equal(ds[2].usage.count, 0);
+    const list = cleanupList(ds);
+    assert.deepEqual(list.map((x) => x.name), ['vercel', 'old-thing']);
+    assert.equal(list[0].command, 'claude plugin uninstall vercel@official');
+    assert.equal(list[0].what, 'Does a thing');
+    assert.equal(list[1].command, 'claude mcp remove old-thing -s user');
+  } finally {
+    if (prev === undefined) delete process.env.CLAUDE_CONFIG_DIR; else process.env.CLAUDE_CONFIG_DIR = prev;
+  }
+});

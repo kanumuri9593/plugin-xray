@@ -273,6 +273,7 @@ function digest(unit, { manifest = {}, items, servers, hooks, hosts, emails = ne
     enabled: unit.enabled !== false,
     description: manifest.description || null,
     root: unit.root || null,
+    source: unit.source || null,
     contextTokens: items.reduce((a, i) => a + i.tokens, 0),
     items,
     servers: servers.map(({ findings: _f, ...s }) => s),

@@ -60,7 +60,7 @@ export function claudePlugins() {
       const root = path.join(synced, bucket, dir);
       if (!isPluginRoot(root) || names().has(name)) continue;
       const m = manifest?.plugins?.find((p) => p.name === name);
-      add(`${name}@${m?.marketplaceName || 'synced'}`, root, { version: m?.version });
+      add(`${name}@${m?.marketplaceName || 'synced'}`, root, { version: m?.version, source: 'synced' });
     }
   }
 

@@ -1,4 +1,6 @@
 import { c, fmtTokens, plural } from './util.mjs';
+import { oneLiner, usageText } from './clean.mjs';
+import { ago } from './usage.mjs';
 
 const DOT = { ok: c.green('●'), review: c.yellow('●'), attention: c.red('●') };
 const WORD = { ok: c.green('ok'), review: c.yellow('review'), attention: c.red('attention') };
@@ -39,14 +41,24 @@ export function renderAudit(report, { details = false } = {}) {
   lines.push(`${c.bold('Plugin X-ray')}  ${plural(digests.length, 'item')} · ${c.bold('≈' + fmtTokens(totals.contextTokens))} tokens on every turn${totals.toolTokens != null ? ` + ≈${fmtTokens(totals.toolTokens)} in local tool lists` : ''} · ${plural(totals.connectors, 'connector')} · ${plural(overlaps.length, 'overlap')}`);
   lines.push('');
   const w = Math.min(28, Math.max(...digests.map((d) => d.name.length), 8) + 1);
+  const removable = new Set((report.cleanup || []).map((x) => x.name));
   for (const d of [...digests].sort((a, b) => b.contextTokens - a.contextTokens)) {
-    const off = d.enabled ? '' : c.dim(' (off)');
-    lines.push(`  ${DOT[d.level]} ${pad(d.name, w)}${lpad('≈' + fmtTokens(d.contextTokens), 7)}  ${c.dim(pad(summaryLine(d), 44))} ${WORD[d.level]}${off}`);
+    const use = usageText(d, ago);
+    const useCol = use == null ? '' : removable.has(d.name) ? c.red(pad(use, 13)) : /^used/.test(use) ? c.green(pad(use, 13)) : c.yellow(pad(use, 13));
+    lines.push(`  ${DOT[d.level]} ${pad(d.name, w)}${lpad('≈' + fmtTokens(d.contextTokens), 7)}  ${useCol}${c.dim(pad(details ? summaryLine(d) : oneLiner(d), 60))} ${WORD[d.level]}`);
   }
   if (overlaps.length) {
     lines.push('', c.bold('Overlaps'));
     for (const o of overlaps.slice(0, details ? 99 : 8)) lines.push(`  ${c.yellow('⇄')} ${o.label}  ${c.dim(o.suggestion)}`);
     if (!details && overlaps.length > 8) lines.push(c.dim(`  … ${overlaps.length - 8} more (--details)`));
+  }
+  if (report.cleanup?.length) {
+    const saves = report.cleanup.reduce((a, x) => a + x.saves, 0);
+    lines.push('', `${c.bold('Clean up')}${saves ? c.dim(`  removing these saves ≈${fmtTokens(saves)} tokens every turn`) : ''}`);
+    const cw = Math.min(24, Math.max(...report.cleanup.map((x) => x.name.length)) + 1);
+    for (const x of report.cleanup.slice(0, details ? 99 : 12)) lines.push(`  ${c.red('✕')} ${pad(x.name, cw)}${pad(x.why, 22)} ${c.dim(x.command || x.note || '')}`);
+    if (!details && report.cleanup.length > 12) lines.push(c.dim(`  … ${report.cleanup.length - 12} more (--details)`));
+    lines.push(c.dim('  Run `xray clean` to pick what to remove.'));
   }
   const flagged = digests.filter((d) => d.level !== 'ok');
   if (flagged.length) {
@@ -90,5 +102,22 @@ export function renderDiff(diff) {
   if (!diff.changes.length) lines.push(c.green('  No new capabilities.'));
   for (const ch of diff.changes) lines.push(`  ${ch.level === 'attention' ? c.red('+') : c.yellow('+')} ${ch.text}`);
   if (diff.tokenDelta) lines.push(c.dim(`  Context cost ${diff.tokenDelta > 0 ? '+' : ''}${diff.tokenDelta} tokens per turn`));
+  return lines.join('\n');
+}
+
+export function renderClean(list, { md = false } = {}) {
+  if (!list.length) return md ? 'Nothing to clean up: everything installed has been used recently.' : c.green('Nothing to clean up: everything installed has been used recently.');
+  const saves = list.reduce((a, x) => a + x.saves, 0);
+  if (md) {
+    const rows = list.map((x) => `| ${x.name} | ${x.what || ''} | ${x.why} | ${x.saves ? '≈' + fmtTokens(x.saves) : ''} | ${x.command ? '`' + x.command + '`' : x.note} |`);
+    return [`**Clean up**: removing all of these saves ≈${fmtTokens(saves)} tokens every turn.`, '', '| Item | What it does | Why | Saves/turn | Remove with |', '|---|---|---|---|---|', ...rows].join('\n');
+  }
+  const w = Math.min(24, Math.max(...list.map((x) => x.name.length)) + 1);
+  const lines = [`${c.bold('Clean up')}  removing all of these saves ≈${fmtTokens(saves)} tokens every turn`, ''];
+  for (const x of list) {
+    lines.push(`  ${c.red('✕')} ${pad(x.name, w)}${lpad(x.saves ? '≈' + fmtTokens(x.saves) : '', 6)}  ${pad(x.why, 22)} ${c.dim(x.what || '')}`);
+    lines.push(`    ${' '.repeat(w)}${c.dim(x.command || x.note)}`);
+  }
+  lines.push('', c.dim('Remove some: xray clean <name> <name> --yes    Remove all: xray clean --all --yes'), c.dim('Undo: claude plugin install <plugin>@<marketplace>'));
   return lines.join('\n');
 }

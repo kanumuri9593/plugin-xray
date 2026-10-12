@@ -1,5 +1,5 @@
 import { audit, scan, diff } from './index.mjs';
-import { renderAudit, renderCard, renderDiff, cardText } from './render.mjs';
+import { renderAudit, renderCard, renderDiff, cardText, renderClean } from './render.mjs';
 import { runHook } from './hooks.mjs';
 import { c } from './util.mjs';
 
@@ -10,6 +10,8 @@ Usage
   xray scan <target>         Check a plugin or MCP server before installing it
                              <target>: ./folder · npm-package[@ver] · github:owner/repo · plugin@marketplace
   xray diff <old> <new>      Show what a new version can do that the old one could not
+  xray clean [names…]        List unused or switched-off items with the command that removes each
+                             add --yes to run those commands for the names given (or --all)
   xray mcp                   Run as an MCP server (tools: xray_audit, xray_scan, xray_diff)
   xray hook <event>          Claude Code hook entry (session-start, config-change, pre-tool-use)
 
@@ -50,6 +52,22 @@ export async function main(argv) {
   if (cmd === 'hook') return runHook(args[0]);
   if (cmd === 'mcp') return (await import('./mcp.mjs')).serve();
 
+  if (cmd === 'clean') {
+    const r = await audit();
+    const pick = flags.all ? r.cleanup : r.cleanup.filter((x) => args.includes(x.name) || args.includes(x.id));
+    if (flags.json) return console.log(JSON.stringify(r.cleanup, null, 2));
+    if (!flags.yes) return console.log(renderClean(r.cleanup, { md: flags.md }));
+    if (!pick.length) { console.log('Nothing picked. Name the items to remove, or pass --all.'); process.exitCode = 1; return; }
+    const { spawnSync } = await import('node:child_process');
+    for (const x of pick) {
+      if (!x.command) { console.log(`- ${x.name}: ${x.note}`); continue; }
+      const [bin, ...rest] = x.command.split(' ');
+      const res = spawnSync(bin, rest, { stdio: 'inherit', shell: process.platform === 'win32' });
+      console.log(`${res.status === 0 ? '✓' : '✕'} ${x.name}: ${x.command}`);
+      if (res.status !== 0) process.exitCode = 1;
+    }
+    return;
+  }
   if (!cmd || cmd === 'audit') {
     const r = await audit({ tools: flags.tools });
     if (flags.json) console.log(JSON.stringify(r, null, 2));
